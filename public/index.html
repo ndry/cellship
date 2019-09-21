@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8" />
+<title>rule110-hero-defense-ppoc</title>
+<link rel="icon" href="./favicon.ico">
+
+<script src="./system.js"></script>
+<script src="./system.config.js"></script>
+<script src="./app.js"></script>
+<script>
+    window.addEventListener('load', function(e) {
+        System
+            .import('main')
+            .then(null, console.error.bind(console));
+    });
+</script>
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+    <div id="container">
+        <canvas id="canvas"></canvas>
+        <div id="gui">
+            <div id="deck">
+            </div>
+            <div id="fps"></div>
+            <div id="updatesPerFrame"></div>
+            <div id="step"></div>
+            <div><input type="button" id="new-game" value="New game"></div>
+        </div>
+    </div>
+</body>
+</html>
