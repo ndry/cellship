@@ -4,6 +4,7 @@ import {UniverseView} from "./UniverseView";
 import {Rule} from "./Rule";
 import {DeckView} from "./DeckView";
 import {Deck} from "./Deck";
+import createInputs from "game-inputs";
 
 {
     const _Math_random = Math.random;
@@ -20,4 +21,15 @@ export const universe = new Universe();
 export const universeView = new UniverseView();
 export const deck = new Deck();
 export const deckView = new DeckView();
+export const inputs = createInputs();
 
+inputs.bind("move-up", "<up>");
+inputs.bind("move-down", "<down>");
+inputs.bind("fire1", "Q");
+inputs.bind("fire2", "W");
+inputs.bind("fire3", "E");
+inputs.bind("fire4", "R");
+inputs.bind("fire5", "A");
+inputs.bind("fire6", "S");
+inputs.bind("fire7", "D");
+inputs.bind("fire8", "F");

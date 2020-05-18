@@ -1,5 +1,9 @@
 import {LehmerPrng} from "./utils/LehmerPrng";
 import {rule} from "./app";
+import { tap } from "./utils/misc";
+import { Spacetime } from "./Spacetime";
+import { PlayerShip } from "./PlayerShip";
+import { Projectile } from "./Projectile";
 
 export class Universe {
     static random = new LehmerPrng(4242);
@@ -7,50 +11,55 @@ export class Universe {
         return Universe.random.next() % rule.stateCount;
     }
 
-    spaceSize = 970;
-    timeSize = 1920;
+    spacetime = new Spacetime();
 
-    spacetime = Array.from({length: this.timeSize}, () => new Uint8Array(this.spaceSize));
+    player = tap(new PlayerShip(), ps => {
+        ps.universe = this;
+        ps.topX = Math.round((this.spacetime.spaceSize - ps.size) / 2);
+    });
 
-    step = 0;
+    projectiles: Projectile[] = [];
 
-    updateCell(t: number, x: number) {
-        this.spacetime[t][x] = rule.getState(this.spacetime, t, x);
-    }
-
-    iterate() {
-        this.spacetime.push(this.spacetime.shift()!);
-        const t = this.spacetime.length - 1;
-
+    fillMostRecentSpace() {
         const nr = rule.spaceNeighbourhoodRadius;
+        const t = this.spacetime.timeSize - 1;
+
         for (let x = 0; x < nr; x++) {
-            this.spacetime[t][x] = Universe.getRandomState();
-            this.spacetime[t][this.spacetime[t].length - 1 - x] = Universe.getRandomState();
+            this.spacetime[t][x].value = Universe.getRandomState();
+            this.spacetime[t][this.spacetime[t].length - 1 - x].value = Universe.getRandomState();
         }
         for (let x = nr; x < this.spacetime[t].length - nr; x++) {
-            this.updateCell(t, x);
-        }
+            const cell = this.spacetime[t][x];
 
-        this.step++;
+            cell.value = rule.getState2((t, x) => {
+                var cell = this.spacetime[t][x];
+                if ("undefined" === typeof cell.projectile) {
+                    return cell.value;
+                }
+                return 0;
+            }, t, x);
+            cell.projectile = undefined;
+            cell.dim = 0;
+            cell.stepUpated = 0;
+        }
     }
 
     constructor() {
         const t = this.spacetime.length - 1;
-        for (let x = 0; x < this.spacetime[t].length; x++) {
-            this.spacetime[t][x] = Universe.getRandomState();
-        }
-        for (let _ = 0; _ < this.spacetime.length; _++) {
-            this.iterate();
-        }
+        // for (let x = 0; x < this.spacetime[t].length; x++) {
+        //     this.spacetime[t][x].value = Universe.getRandomState();
+        // }
+        // for (let _ = 0; _ < this.spacetime.length; _++) {
+        //     this.iterate();
+        // }
     }
 
-    refresh(fromT: number, toT?: number) {
-        const nr = rule.spaceNeighbourhoodRadius;
-        const _toT = "undefined" === typeof toT ? this.spacetime.length : toT;
-        for (let t = fromT; t < _toT; t++) {
-            for (let x = nr; x < this.spacetime[t].length - nr; x++) {
-                this.updateCell(t, x);
-            }
+    update() {
+        this.spacetime.performStep();
+        this.fillMostRecentSpace();
+        this.player.update();
+        for (const p of [...this.projectiles]) {
+            p.update();
         }
     }
 }

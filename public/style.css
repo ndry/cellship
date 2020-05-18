@@ -10,24 +10,19 @@ html, body {
     position: relative;
 }
 #canvas {
-    position: absolute;
 }
 #gui {
     position: absolute;
     left: 0;
     top: 0;
-    width: 600px;
     color: white;
     font-size: larger;
 }
 #deck {
-    overflow-y: scroll;
-    height: 950px;
-    width: fit-content;
-    float: left;
+
 }
 #deck > * {
     border: 1px solid green;
-    display: block;
-    margin: 10px;
+    display: inline-block;
+    margin: 0;
 }

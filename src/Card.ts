@@ -24,7 +24,7 @@ export class Card {
     constructor(
         public readonly cardSpace: ArrayLike<number>,
     ) {
-        const spaceSize = this.cardSize * 12 + 1;
+        const spaceSize = this.cardSize * 10 + 1;
         const timeSize = spaceSize;
         this.spacetime = Array.from({length: timeSize}, () => new Uint8Array(spaceSize));
 
@@ -36,7 +36,7 @@ export class Card {
         for (let t = 1; t < this.spacetime.length; t++) {
             const space = this.spacetime[t];
             for (let x = nr; x < space.length - nr; x++) {
-                space[x] = rule.getState(this.spacetime, t, x);
+                space[x] = rule.getState1(this.spacetime, t, x);
             }
         }
         for (let t = 0; t < timeSize; t++) {

@@ -8,6 +8,8 @@
         "watch": true,
         "sourceMap": true,
 
+        "allowJs": true,
+
         "noImplicitAny": true,
         "noImplicitReturns": true,
         "noImplicitThis": true,
