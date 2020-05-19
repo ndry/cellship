@@ -18,7 +18,7 @@ export class PlayerShip {
     }
 
     isObstacle(x: number) {
-        const cell = this.spacetime[this.time][x];
+        const cell = this.spacetime.getSpaceAtTime(this.spacetime.timeOffset + this.time)[x];
         return ("undefined" === typeof cell.projectile) && cell.value > 0;
     }
 
@@ -52,10 +52,6 @@ export class PlayerShip {
         projectile.owner = this;
         projectile.timeCreated = t;
         projectile.timePosition = t + 1;
-        projectile.topXCreated = this.topX;
-        projectile.bottomXCreated = this.bottomX;
-        projectile.topX = this.topX;
-        projectile.bottomX = this.bottomX;
         this.universe.projectiles.push(projectile);
         const tSpace = this.spacetime.getSpaceAtTime(t);
         for (

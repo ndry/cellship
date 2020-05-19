@@ -1,5 +1,6 @@
 import { rule, universe } from "./app";
 import { PlayerShip } from "./PlayerShip";
+import { Cell } from "./Spacetime";
 
 export class Projectile {
     owner: PlayerShip;
@@ -8,78 +9,66 @@ export class Projectile {
 
     timeVelocity = 10;
     timeCreated: number;
-    topXCreated: number;
-    bottomXCreated: number;
     timePosition: number;
-    topX: number;
-    bottomX: number;
 
-    lastChanged: Set<number>;
+    getValue(cell: Cell) {
+        if (cell.projectile == this || "undefined" === typeof cell.projectile) {
+            return cell.value;
+        }
+        return 0;
+    };
 
     updateSpace(t: number) {
         const nr = rule.spaceNeighbourhoodRadius;
         const prevSpace = this.spacetime.getSpaceAtTime(t - 1);
         const tSpace = this.spacetime.getSpaceAtTime(t);
-
-        const getValue = (t: number, x: number) => {
-            var cell = this.spacetime.getSpaceAtTime(t)[x];
-            if (cell.projectile == this || "undefined" === typeof cell.projectile) {
-                return cell.value;
-            }
-            return 0;
-        };
         
         let owned = 0;
-        for (
-            let x = nr; 
-            x < tSpace.length - nr; 
-            x++
-        ) {
-            const cell1 = prevSpace[x - 1];
-            const cell2 = prevSpace[x];
-            const cell3 = prevSpace[x + 1];
+        const lnr = tSpace.length - nr;
+        const timeOffset = this.spacetime.timeOffset;
+        const prevTimeOffset = timeOffset - 1;
+        let prevCell1 = prevSpace[0];
+        let prevCell2 = prevSpace[0];
+        let prevCell3 = prevSpace[1];
+        for (let x = nr; x < lnr; x++) {
+            prevCell1 = prevCell2;
+            prevCell2 = prevCell3;
+            prevCell3 = prevSpace[x + 1];
+            if (prevCell1.stepUpated !== timeOffset
+                && prevCell1.stepUpated !== prevTimeOffset
+                && prevCell2.stepUpated !== timeOffset
+                && prevCell2.stepUpated !== prevTimeOffset
+                && prevCell3.stepUpated !== timeOffset
+                && prevCell3.stepUpated !== prevTimeOffset
+            ) {
+                continue;
+            }
+
             const cell = tSpace[x];
+            const value = rule.getState3(
+                this.getValue(prevCell1),
+                this.getValue(prevCell2),
+                this.getValue(prevCell3));
 
-            const value = rule.getState2(getValue, t, x);
-
-            if (value !== cell.value && x === this.topX - 1) {
-                this.topX = x;
+            if (value === 0 
+                && cell.value !== 0 
+                && cell.projectile 
+                && cell.projectile !== this
+            ) {
+                continue;
             }
 
-            if (value !== cell.value && x === this.bottomX + 1) {
-                this.bottomX = x;
-            }
-
-            const valuedCellsOwners = [cell1, cell2, cell3]
+            let owner: Projectile | undefined = undefined;
+            if (value > 0) {
+                const valuedCellsOwners = [prevCell1, prevCell2, prevCell3]
                 .filter(c => 
                     c.value > 0 
                     && (c.projectile == this || "undefined" === typeof c.projectile))
                 .map(c => c.projectile);
-
-            const dsds = [cell1, cell2, cell3]
-                .filter(c => (c.stepUpated === this.spacetime.timeOffset - 1)
-                    || (c.stepUpated === this.spacetime.timeOffset));
-
-            if (dsds.length === 0) {
-                continue;
+    
+                owner = valuedCellsOwners.length === 0 ? undefined
+                    : valuedCellsOwners.reduce((acc, o) => acc && o);
             }
-
-            if (value === 0 && cell.value !== 0 && cell.projectile && cell.projectile !== this) {
-                continue;
-            }
-            
-
-            // const dsds1 = [cell1, cell2, cell3]
-            //     .filter(c => 
-            //         (c.value > 0 && (c.projectile == this)));
-
-            // if (dsds1.length === 0) {
-            //     continue;
-            // }
-
-            const mergedOwner = valuedCellsOwners.length == 0 ? undefined
-                : valuedCellsOwners.reduce((acc, o) => acc && o);
-            const owner = value > 0 ? mergedOwner : undefined;
 
             if (cell.value != value || cell.projectile != owner) {
                 cell.stepUpated = this.spacetime.timeOffset;
@@ -98,12 +87,6 @@ export class Projectile {
     }
 
     update() {
-        if ("undefined" === typeof this.lastChanged) {
-            this.lastChanged = new Set(Array.from(
-                {length: this.bottomXCreated - this.topXCreated + 1},
-                (_, i) => this.topXCreated + i));
-        }
-
         const timeEndOfPrediction = this.spacetime.timeOffset + this.spacetime.timeSize;
         if (this.timePosition < timeEndOfPrediction) {
             for (let t = this.timePosition; t < Math.min(this.timePosition + this.timeVelocity, timeEndOfPrediction); t++) {

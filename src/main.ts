@@ -37,19 +37,30 @@ window.addEventListener("keypress", ev => {
 });
 
 let lastIteration = Date.now();
+let fpsHistorical: number | undefined = undefined;
+const fpsHistoricalFactor = 0.98;
 
 function render() {
     const now = Date.now();
     const fps = 1000 / (now - lastIteration);
     lastIteration = now;
+    if ("undefined" === typeof fpsHistorical) {
+        fpsHistorical = fps
+    } else {
+        fpsHistorical = 
+            fpsHistorical * fpsHistoricalFactor 
+            + fps * (1 - fpsHistoricalFactor);
+    }
 
-    fpsDisplay.textContent = "fps: " + fps.toFixed(2);
+    fpsDisplay.textContent =
+        `fps: ${fpsHistorical.toFixed(2)} (${fps.toFixed(2)})`;
     updatesPerFrameDisplay.textContent = "updates per frame: " + updatesPerFrame;
     stepDisplay.textContent = "step: " + universe.spacetime.timeOffset;
     universeView.render();
 
 }
 
+var f = 0;
 function requestAnimationFrameCallback() {
     // engine.update();
     for (let _ = 0; _ < updatesPerFrame; _++) {
@@ -62,6 +73,11 @@ function requestAnimationFrameCallback() {
     render();
     inputs.tick();
     requestAnimationFrame(requestAnimationFrameCallback);
+    if (f == 10) {
+        // app.synth.triggerAttackRelease("C4", "8n");
+        f = 0;
+    }
+    f++;
 }
 
 requestAnimationFrame(requestAnimationFrameCallback);

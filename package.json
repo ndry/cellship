@@ -7,9 +7,10 @@
   },
   "devDependencies": {
     "http-server": "^0.11.1",
-    "typescript": "latest"
+    "typescript": "next"
   },
   "dependencies": {
-    "game-inputs": "^0.4.0"
+    "game-inputs": "^0.4.0",
+    "tone": "next"
   }
 }

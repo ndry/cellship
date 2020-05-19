@@ -22,17 +22,18 @@ export class Universe {
 
     fillMostRecentSpace() {
         const nr = rule.spaceNeighbourhoodRadius;
-        const t = this.spacetime.timeSize - 1;
+        const t = this.spacetime.timeSize - 1 + this.spacetime.timeOffset;
+        const tSpace = this.spacetime.getSpaceAtTime(t);
 
         for (let x = 0; x < nr; x++) {
-            this.spacetime[t][x].value = Universe.getRandomState();
-            this.spacetime[t][this.spacetime[t].length - 1 - x].value = Universe.getRandomState();
+            tSpace[x].value = Universe.getRandomState();
+            tSpace[tSpace.length - 1 - x].value = Universe.getRandomState();
         }
-        for (let x = nr; x < this.spacetime[t].length - nr; x++) {
-            const cell = this.spacetime[t][x];
+        for (let x = nr; x < tSpace.length - nr; x++) {
+            const cell = tSpace[x];
 
             cell.value = rule.getState2((t, x) => {
-                var cell = this.spacetime[t][x];
+                var cell = this.spacetime.getSpaceAtTime(t)[x];
                 if ("undefined" === typeof cell.projectile) {
                     return cell.value;
                 }
@@ -45,7 +46,7 @@ export class Universe {
     }
 
     constructor() {
-        const t = this.spacetime.length - 1;
+        const t = this.spacetime.timeSize - 1 + this.spacetime.timeOffset;
         // for (let x = 0; x < this.spacetime[t].length; x++) {
         //     this.spacetime[t][x].value = Universe.getRandomState();
         // }

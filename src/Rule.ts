@@ -26,6 +26,17 @@ export class Rule {
         return this.table[sum];
     }
 
+    getState3(
+        cell_m1_m1: number,
+        cell_m1_z0: number,
+        cell_m1_p1: number,
+    ) {
+        const sum = cell_m1_m1
+            + cell_m1_z0
+            + cell_m1_p1;
+        return this.table[sum];
+    }
+
     getState1(spacetime: ArrayLike<ArrayLike<number>>, t: number, x: number) {
         const sum = (spacetime[t - 1][x - 1])
             + (spacetime[t - 1][x])

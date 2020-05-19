@@ -38,43 +38,49 @@ export class UniverseView {
         // });
     }
 
-    setPixel(x: number, y: number, cell: Cell) {
-        let a =  Math.max(0, (1 - (universe.spacetime.timeOffset - cell.dim) / 1000));
-        a *= a;
-        a *= a;
-        a *= a;
-        a *= a;
-        a *= a;
-        const ageFacctor = a;
-
-        const lum = 0.5 * cell.value * ageFacctor;
-
-        let color = 0xFF << 24;
-        if (cell.value == 0) {
-            const ageFactorInt = Math.floor(ageFacctor * 0x1F);
-            color += ageFactorInt;
-        } else if (cell.projectile) {
-            const lumInt = Math.floor((0.05 + 0.95 * lum) * 0xFF);
-            color += lumInt << 8;
+    getCellColor(cell: Cell) {
+        let ageFactor = 1000 - (universe.spacetime.timeOffset - cell.dim);
+        if (ageFactor < 0) {
+            ageFactor = 0;
         } else {
-            const lumInt = Math.floor(lum * 0x7F);
-            color += 0x808080;
-            color += lumInt - (lumInt << 8) - (lumInt << 16);
+            ageFactor *= 0.001;
+            ageFactor *= ageFactor;
+            ageFactor *= ageFactor;
+            ageFactor *= ageFactor;
+            ageFactor *= ageFactor;
+            ageFactor *= ageFactor;
         }
 
-        this.imageData.setPixel(x, y, color);
+        if (cell.value == 0) {
+            return 0xFF000000 + Math.floor(ageFactor * 0x1F);
+        } 
+        if (!cell.projectile) {
+            const lum = 0.5 * cell.value * ageFactor;
+            const lumInt = Math.floor(lum * 0x7F);
+            return 0xFF808080 + lumInt - (lumInt << 8) - (lumInt << 16);
+        } 
+        {
+            let color = 0xFF << 24;
+            const lum = 0.5 * cell.value * ageFactor;
+            const lumInt = Math.floor((0.05 + 0.95 * lum) * 0xFF);
+            color += lumInt << 8;
+            return color;
+        }
     }
 
     render() {
-        for (let t = 0; t < universe.spacetime.length; t++) {
-            const space = universe.spacetime[t];
+        const w = this.imageData.width;
+        const idd = this.imageData.dataUint32;
+        for (let t = 0; t < universe.spacetime.timeSize; t++) {
+            const space = universe.spacetime.getSpaceAtTime(t + universe.spacetime.timeOffset);
             for (let x = 0; x < space.length; x++) {
-                this.setPixel(t, x, space[x]);
+                idd[x * w + t] = this.getCellColor(space[x]);
             }
         }
+
         for (let x = universe.player.topX; x <= universe.player.bottomX; x++) {
             this.imageData.setPixel(100, x, 0xFF00FF00);
         }
-         this.ctx.putImageData(this.imageData, 0, 0);
+        this.ctx.putImageData(this.imageData, 0, 0);
     }
 }

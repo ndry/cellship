@@ -7,38 +7,29 @@ export interface Cell {
     stepUpated: number,
 }
 
-export class Spacetime extends Array<Array<Cell>> {
-    get timeSize() {
-        return this.length;
-    }
-    get spaceSize() {
-        return this[0].length;
-    }
-
+export class Spacetime {
     timeOffset = 0;
 
+    data: Array<Array<Cell>>;
+
     constructor(
-        spaceSize = 770,
-        timeSize = 1920) {
-        super(
-            ...Array.from(
-                { length: timeSize },
-                () => Array.from(
-                    { length: spaceSize },
-                    () => ({
-                        value: 0,
-                        projectile: undefined,
-                        dim: 1e-5,
-                        stepUpated: 0,
-                    }))));
+        public spaceSize = 770,
+        public timeSize = 1920
+    ) {
+        this.data = Array.from({ length: timeSize }, () => 
+            Array.from({ length: spaceSize }, () => ({
+                value: 0,
+                projectile: undefined,
+                dim: 1e-5,
+                stepUpated: 0,
+            })));
     }
 
     performStep() {
-        this.push(this.shift()!);
         this.timeOffset++;
     }
 
     getSpaceAtTime(t: number) {
-        return this[t - this.timeOffset];
+        return this.data[t % this.timeSize];
     }
 }

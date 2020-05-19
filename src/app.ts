@@ -5,6 +5,7 @@ import {Rule} from "./Rule";
 import {DeckView} from "./DeckView";
 import {Deck} from "./Deck";
 import createInputs from "game-inputs";
+// import * as Tone from "tone";
 
 {
     const _Math_random = Math.random;
@@ -22,6 +23,7 @@ export const universeView = new UniverseView();
 export const deck = new Deck();
 export const deckView = new DeckView();
 export const inputs = createInputs();
+// export const synth = new Tone.Synth().toMaster();
 
 inputs.bind("move-up", "<up>");
 inputs.bind("move-down", "<down>");
