@@ -13,6 +13,17 @@ export class PlayerShip {
     size = 51;
     lastSizeChangeStep = 0;
 
+    constructor() {
+        inputs.down.on("fire1", () => this.fire(deck.cards[0]));
+        inputs.down.on("fire2", () => this.fire(deck.cards[1]));
+        inputs.down.on("fire3", () => this.fire(deck.cards[2]));
+        inputs.down.on("fire4", () => this.fire(deck.cards[3]));
+        inputs.down.on("fire5", () => this.fire(deck.cards[4]));
+        inputs.down.on("fire6", () => this.fire(deck.cards[5]));
+        inputs.down.on("fire7", () => this.fire(deck.cards[6]));
+        inputs.down.on("fire8", () => this.fire(deck.cards[7]));
+    }
+
     get bottomX() {
         return this.topX + this.size;
     }
@@ -100,38 +111,6 @@ export class PlayerShip {
         }
         if (inputs.state["move-down"] && this.canMoveDown()) {
             this.moveDown();
-        }
-        if (inputs.state["fire1"]) {
-            this.fire(deck.cards[0]);
-            inputs.state["fire1"] = false;
-        }
-        if (inputs.state["fire2"]) {
-            this.fire(deck.cards[1]);
-            inputs.state["fire2"] = false;
-        }
-        if (inputs.state["fire3"]) {
-            this.fire(deck.cards[2]);
-            inputs.state["fire3"] = false;
-        }
-        if (inputs.state["fire4"]) {
-            this.fire(deck.cards[3]);
-            inputs.state["fire4"] = false;
-        }
-        if (inputs.state["fire5"]) {
-            this.fire(deck.cards[4]);
-            inputs.state["fire5"] = false;
-        }
-        if (inputs.state["fire6"]) {
-            this.fire(deck.cards[5]);
-            inputs.state["fire6"] = false;
-        }
-        if (inputs.state["fire7"]) {
-            this.fire(deck.cards[6]);
-            inputs.state["fire7"] = false;
-        }
-        if (inputs.state["fire8"]) {
-            this.fire(deck.cards[7]);
-            inputs.state["fire8"] = false;
         }
     }
 }

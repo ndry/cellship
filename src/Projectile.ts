@@ -77,7 +77,7 @@ export class Projectile {
             cell.value = value;
             cell.projectile = owner;
             cell.dim = 
-                this.spacetime.timeOffset - (this.timePosition - t) / this.timeVelocity;
+                this.spacetime.timeOffset - 1 - (this.timePosition - t) / this.timeVelocity;
 
             if (cell.projectile === this) {
                 owned++;
@@ -94,7 +94,7 @@ export class Projectile {
             }
         } else {
             const owned = this.updateSpace(timeEndOfPrediction - 1);
-            if ((this.timePosition - this.timeVelocity * 1000) >= timeEndOfPrediction && owned === 0) {
+            if ((this.timePosition - this.timeVelocity * 2000) >= timeEndOfPrediction && owned === 0) {
                 universe.projectiles.splice(universe.projectiles.indexOf(this), 1);
             }
         }

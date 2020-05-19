@@ -1,14 +1,11 @@
-import {universe, universeView, inputs} from "./app";
 import * as app from "./app";
-import { Universe } from "./Universe";
-const fpsDisplay = document.getElementById("fps") as HTMLDivElement;
-const updatesPerFrameDisplay = document.getElementById("updatesPerFrame") as HTMLDivElement;
-const stepDisplay = document.getElementById("step") as HTMLDivElement;
+
 
 Object.assign(window, app);
 
-
-let updatesPerFrame = 10;
+const initialUps = 300;
+const upsStep = 5;
+let targetUps = initialUps;
 
 let paused = false;
 
@@ -20,64 +17,29 @@ window.addEventListener("keypress", ev => {
             break;
         }
         case "Backquote": {
-            switch (updatesPerFrame) {
-                case 1: 
-                    updatesPerFrame = 10;
-                    break;
-                case 10: 
-                    updatesPerFrame = 100;
-                    break;
-                case 100: 
-                    updatesPerFrame = 1;
-                    break;
+            targetUps *= upsStep;
+            if (targetUps > initialUps * upsStep) {
+                targetUps = initialUps / upsStep;
             }
             break;
         }
     }
 });
 
-let lastIteration = Date.now();
-let fpsHistorical: number | undefined = undefined;
-const fpsHistoricalFactor = 0.98;
-
-function render() {
-    const now = Date.now();
-    const fps = 1000 / (now - lastIteration);
-    lastIteration = now;
-    if ("undefined" === typeof fpsHistorical) {
-        fpsHistorical = fps
-    } else {
-        fpsHistorical = 
-            fpsHistorical * fpsHistoricalFactor 
-            + fps * (1 - fpsHistoricalFactor);
-    }
-
-    fpsDisplay.textContent =
-        `fps: ${fpsHistorical.toFixed(2)} (${fps.toFixed(2)})`;
-    updatesPerFrameDisplay.textContent = "updates per frame: " + updatesPerFrame;
-    stepDisplay.textContent = "step: " + universe.spacetime.timeOffset;
-    universeView.render();
-
-}
-
-var f = 0;
-function requestAnimationFrameCallback() {
-    // engine.update();
-    for (let _ = 0; _ < updatesPerFrame; _++) {
-        if (paused) {
-            break;
+let lastUpdateTime: number | undefined = undefined;
+function requestAnimationFrameCallback(time: number) {
+    if ("undefined" !== typeof lastUpdateTime) {
+        while (lastUpdateTime < time) {
+            app.update(lastUpdateTime);
+            lastUpdateTime += 1000 / targetUps;
         }
-        
-        universe.update();
+    } else {
+        lastUpdateTime = time;
     }
-    render();
-    inputs.tick();
+    app.render(time);
     requestAnimationFrame(requestAnimationFrameCallback);
-    if (f == 10) {
-        // app.synth.triggerAttackRelease("C4", "8n");
-        f = 0;
-    }
-    f++;
 }
 
 requestAnimationFrame(requestAnimationFrameCallback);
+
+

@@ -20,7 +20,7 @@ export class Spacetime {
             Array.from({ length: spaceSize }, () => ({
                 value: 0,
                 projectile: undefined,
-                dim: 1e-5,
+                dim: -1e10,
                 stepUpated: 0,
             })));
     }

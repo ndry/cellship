@@ -40,7 +40,7 @@ export class Universe {
                 return 0;
             }, t, x);
             cell.projectile = undefined;
-            cell.dim = 0;
+            cell.dim = -1e10;
             cell.stepUpated = 0;
         }
     }
