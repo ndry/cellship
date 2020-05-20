@@ -1,6 +1,7 @@
 import { Cell } from "./Spacetime";
 
 export class Rule {
+    readonly id = "3st_1nr_total_1815";
     readonly stateCount = 3;
     readonly ruleSpaceSizePower = 3 * (this.stateCount - 1) + 1;
     readonly spaceNeighbourhoodRadius = 1;

@@ -1,45 +1,14 @@
-import * as app from "./app";
-
-
-Object.assign(window, app);
-
-const initialUps = 300;
-const upsStep = 5;
-let targetUps = initialUps;
-
-let paused = false;
-
-window.addEventListener("keypress", ev => {
-    console.log(ev.code);
-    switch (ev.code) {
-        case "Space": {
-            paused = !paused;
-            break;
-        }
-        case "Backquote": {
-            targetUps *= upsStep;
-            if (targetUps > initialUps * upsStep) {
-                targetUps = initialUps / upsStep;
-            }
-            break;
-        }
+{
+    const _Math_random = Math.random;
+    Math.random = function () {
+        console.warn("Use of built-in Math.random()!");
+        return _Math_random();
     }
-});
-
-let lastUpdateTime: number | undefined = undefined;
-function requestAnimationFrameCallback(time: number) {
-    if ("undefined" !== typeof lastUpdateTime) {
-        while (lastUpdateTime < time) {
-            app.update(lastUpdateTime);
-            lastUpdateTime += 1000 / targetUps;
-        }
-    } else {
-        lastUpdateTime = time;
-    }
-    app.render(time);
-    requestAnimationFrame(requestAnimationFrameCallback);
 }
 
-requestAnimationFrame(requestAnimationFrameCallback);
+import { Application } from "./Application";
 
+const app = new Application();
+Object.assign(window, {app});
+app.run();
 

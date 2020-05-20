@@ -1,11 +1,14 @@
-import { inputs, deck } from "./app";
 import { Universe } from "./Universe";
-import { Card } from "./Card";
+import { Weapon } from "./Weapon";
 import { Projectile } from "./Projectile";
+import { Weaponary } from "./Weaponary";
 
 
 export class PlayerShip {
-    universe: Universe;
+    constructor(
+        public universe: Universe,
+    ) { }
+
     get spacetime() { return this.universe.spacetime; }
 
     topX: number;
@@ -13,16 +16,7 @@ export class PlayerShip {
     size = 51;
     lastSizeChangeStep = 0;
 
-    constructor() {
-        inputs.down.on("fire1", () => this.fire(deck.cards[0]));
-        inputs.down.on("fire2", () => this.fire(deck.cards[1]));
-        inputs.down.on("fire3", () => this.fire(deck.cards[2]));
-        inputs.down.on("fire4", () => this.fire(deck.cards[3]));
-        inputs.down.on("fire5", () => this.fire(deck.cards[4]));
-        inputs.down.on("fire6", () => this.fire(deck.cards[5]));
-        inputs.down.on("fire7", () => this.fire(deck.cards[6]));
-        inputs.down.on("fire8", () => this.fire(deck.cards[7]));
-    }
+    weaponary = new Weaponary(this.universe.rule);
 
     get bottomX() {
         return this.topX + this.size;
@@ -57,7 +51,7 @@ export class PlayerShip {
         return this.spacetime.timeOffset - this.lastSizeChangeStep;
     }
 
-    fire(card: Card) {
+    fire(weapon: Weapon) {
         const t = this.spacetime.timeOffset + this.time;
         const projectile = new Projectile();
         projectile.owner = this;
@@ -72,11 +66,11 @@ export class PlayerShip {
         ) {
             const cell = tSpace[x];
             
-            const cardX = x - (this.topX + (this.size - 1) / 2 + 1) + (card.cardSize - 1) / 2 + 1;
+            const cardX = x - (this.topX + (this.size - 1) / 2 + 1) + (weapon.size - 1) / 2 + 1;
             // if (cell.value !== card.cardSpace[cardX] ?? 0) {
                 cell.stepUpated = this.spacetime.timeOffset;
             // }
-            cell.value = card.cardSpace[cardX] ?? 0;
+            cell.value = weapon.space[cardX] ?? 0;
             cell.projectile = projectile;
         }
     }
@@ -105,12 +99,6 @@ export class PlayerShip {
                 this.size -= 2;
             }
             this.resetGrowth();
-        }
-        if (inputs.state["move-up"] && this.canMoveUp()) {
-            this.moveUp();
-        }
-        if (inputs.state["move-down"] && this.canMoveDown()) {
-            this.moveDown();
         }
     }
 }

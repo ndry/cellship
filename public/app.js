@@ -52,32 +52,165 @@ System.register("utils/misc", [], function (exports_2, context_2) {
         }
     };
 });
-System.register("PlayerShip", ["app", "Projectile"], function (exports_3, context_3) {
-    var app_1, Projectile_1, PlayerShip;
+System.register("Rule", [], function (exports_3, context_3) {
+    var Rule;
     var __moduleName = context_3 && context_3.id;
     return {
+        setters: [],
+        execute: function () {
+            Rule = class Rule {
+                constructor() {
+                    this.id = "3st_1nr_total_1815";
+                    this.stateCount = 3;
+                    this.ruleSpaceSizePower = 3 * (this.stateCount - 1) + 1;
+                    this.spaceNeighbourhoodRadius = 1;
+                    this.code = 1815;
+                    this.tableString = (this.code).toString(this.stateCount).padStart(this.ruleSpaceSizePower, "0");
+                    this.table = Array.from(this.tableString).reverse().map(x => +x);
+                }
+                getState(spacetime, t, x) {
+                    const sum = (spacetime[t - 1][x - 1].value)
+                        + (spacetime[t - 1][x].value)
+                        + (spacetime[t - 1][x + 1].value);
+                    return this.table[sum];
+                }
+                getState2(getValue, t, x) {
+                    const sum = getValue(t - 1, x - 1)
+                        + getValue(t - 1, x)
+                        + getValue(t - 1, x + 1);
+                    return this.table[sum];
+                }
+                getState3(cell_m1_m1, cell_m1_z0, cell_m1_p1) {
+                    const sum = cell_m1_m1
+                        + cell_m1_z0
+                        + cell_m1_p1;
+                    return this.table[sum];
+                }
+                getState1(spacetime, t, x) {
+                    const sum = (spacetime[t - 1][x - 1])
+                        + (spacetime[t - 1][x])
+                        + (spacetime[t - 1][x + 1]);
+                    return this.table[sum];
+                }
+            };
+            exports_3("Rule", Rule);
+        }
+    };
+});
+System.register("Weaponary", ["Weapon", "utils/LehmerPrng"], function (exports_4, context_4) {
+    var Weapon_1, LehmerPrng_1, Weaponary;
+    var __moduleName = context_4 && context_4.id;
+    return {
         setters: [
-            function (app_1_1) {
-                app_1 = app_1_1;
+            function (Weapon_1_1) {
+                Weapon_1 = Weapon_1_1;
             },
+            function (LehmerPrng_1_1) {
+                LehmerPrng_1 = LehmerPrng_1_1;
+            }
+        ],
+        execute: function () {
+            Weaponary = class Weaponary {
+                constructor(rule) {
+                    this.rule = rule;
+                    this.random = new LehmerPrng_1.LehmerPrng(Math.floor(Date.now()));
+                    this.weapons = this.loadOrGenerate();
+                }
+                generateRandomWeapon() {
+                    const getRandomState = () => {
+                        return this.random.next() % this.rule.stateCount;
+                    };
+                    const size = 45;
+                    return new Weapon_1.Weapon(this.rule, Array.from({ length: size }, getRandomState));
+                }
+                save() {
+                    localStorage.setItem(`${this.rule.id}_weaponary`, JSON.stringify(this.weapons.map(w => w.isBookmarked ? w.space : undefined)));
+                }
+                loadOrGenerate() {
+                    const itemJson = localStorage.getItem(`${this.rule.id}_weaponary`);
+                    const weapons = Array.from({ length: 8 });
+                    if (itemJson !== null) {
+                        const item = JSON.parse(itemJson);
+                        for (let i = 0; i < weapons.length; i++) {
+                            const itemi = item[i];
+                            if (itemi) {
+                                weapons[i] = new Weapon_1.Weapon(this.rule, itemi);
+                                weapons[i].isBookmarked = true;
+                            }
+                            else {
+                                weapons[i] = this.generateRandomWeapon();
+                            }
+                        }
+                    }
+                    return weapons;
+                }
+            };
+            exports_4("Weaponary", Weaponary);
+        }
+    };
+});
+System.register("Weapon", [], function (exports_5, context_5) {
+    var Weapon;
+    var __moduleName = context_5 && context_5.id;
+    return {
+        setters: [],
+        execute: function () {
+            Weapon = class Weapon {
+                constructor(rule, space) {
+                    this.rule = rule;
+                    this.space = space;
+                    this.isBookmarked = false;
+                    const spaceSize = this.size * 10 + 1;
+                    const timeSize = spaceSize;
+                    this.spacetime = Array.from({ length: timeSize }, () => new Uint8Array(spaceSize));
+                    const xMargin = (this.spacetime[0].length - this.space.length) / 2;
+                    for (let x = 0; x < this.space.length; x++) {
+                        this.spacetime[0][x + xMargin] = this.space[x];
+                    }
+                    const nr = rule.spaceNeighbourhoodRadius;
+                    for (let t = 1; t < this.spacetime.length; t++) {
+                        const space = this.spacetime[t];
+                        for (let x = nr; x < space.length - nr; x++) {
+                            space[x] = rule.getState1(this.spacetime, t, x);
+                        }
+                    }
+                    for (let t = 0; t < timeSize; t++) {
+                        const space = new Uint8Array(this.size * 2 + 1);
+                        const xMargin = (spaceSize - space.length) / 2;
+                        for (let x = 0; x < space.length; x++) {
+                            space[x] = this.spacetime[t][x + xMargin];
+                        }
+                        this.spacetime[t] = space;
+                    }
+                }
+                get size() { return this.space.length; }
+                get spaceSize() { return this.spacetime[0].length; }
+                get timeSize() { return this.spacetime.length; }
+            };
+            exports_5("Weapon", Weapon);
+        }
+    };
+});
+System.register("PlayerShip", ["Projectile", "Weaponary"], function (exports_6, context_6) {
+    var Projectile_1, Weaponary_1, PlayerShip;
+    var __moduleName = context_6 && context_6.id;
+    return {
+        setters: [
             function (Projectile_1_1) {
                 Projectile_1 = Projectile_1_1;
+            },
+            function (Weaponary_1_1) {
+                Weaponary_1 = Weaponary_1_1;
             }
         ],
         execute: function () {
             PlayerShip = class PlayerShip {
-                constructor() {
+                constructor(universe) {
+                    this.universe = universe;
                     this.time = 100;
                     this.size = 51;
                     this.lastSizeChangeStep = 0;
-                    app_1.inputs.down.on("fire1", () => this.fire(app_1.deck.cards[0]));
-                    app_1.inputs.down.on("fire2", () => this.fire(app_1.deck.cards[1]));
-                    app_1.inputs.down.on("fire3", () => this.fire(app_1.deck.cards[2]));
-                    app_1.inputs.down.on("fire4", () => this.fire(app_1.deck.cards[3]));
-                    app_1.inputs.down.on("fire5", () => this.fire(app_1.deck.cards[4]));
-                    app_1.inputs.down.on("fire6", () => this.fire(app_1.deck.cards[5]));
-                    app_1.inputs.down.on("fire7", () => this.fire(app_1.deck.cards[6]));
-                    app_1.inputs.down.on("fire8", () => this.fire(app_1.deck.cards[7]));
+                    this.weaponary = new Weaponary_1.Weaponary(this.universe.rule);
                 }
                 get spacetime() { return this.universe.spacetime; }
                 get bottomX() {
@@ -105,7 +238,7 @@ System.register("PlayerShip", ["app", "Projectile"], function (exports_3, contex
                 get growthTime() {
                     return this.spacetime.timeOffset - this.lastSizeChangeStep;
                 }
-                fire(card) {
+                fire(weapon) {
                     var _a;
                     const t = this.spacetime.timeOffset + this.time;
                     const projectile = new Projectile_1.Projectile();
@@ -116,11 +249,11 @@ System.register("PlayerShip", ["app", "Projectile"], function (exports_3, contex
                     const tSpace = this.spacetime.getSpaceAtTime(t);
                     for (let x = this.topX; x <= this.bottomX; x++) {
                         const cell = tSpace[x];
-                        const cardX = x - (this.topX + (this.size - 1) / 2 + 1) + (card.cardSize - 1) / 2 + 1;
+                        const cardX = x - (this.topX + (this.size - 1) / 2 + 1) + (weapon.size - 1) / 2 + 1;
                         // if (cell.value !== card.cardSpace[cardX] ?? 0) {
                         cell.stepUpated = this.spacetime.timeOffset;
                         // }
-                        cell.value = (_a = card.cardSpace[cardX]) !== null && _a !== void 0 ? _a : 0;
+                        cell.value = (_a = weapon.space[cardX]) !== null && _a !== void 0 ? _a : 0;
                         cell.projectile = projectile;
                     }
                 }
@@ -149,33 +282,24 @@ System.register("PlayerShip", ["app", "Projectile"], function (exports_3, contex
                         }
                         this.resetGrowth();
                     }
-                    if (app_1.inputs.state["move-up"] && this.canMoveUp()) {
-                        this.moveUp();
-                    }
-                    if (app_1.inputs.state["move-down"] && this.canMoveDown()) {
-                        this.moveDown();
-                    }
                 }
             };
-            exports_3("PlayerShip", PlayerShip);
+            exports_6("PlayerShip", PlayerShip);
         }
     };
 });
-System.register("Projectile", ["app"], function (exports_4, context_4) {
-    var app_2, Projectile;
-    var __moduleName = context_4 && context_4.id;
+System.register("Projectile", [], function (exports_7, context_7) {
+    var Projectile;
+    var __moduleName = context_7 && context_7.id;
     return {
-        setters: [
-            function (app_2_1) {
-                app_2 = app_2_1;
-            }
-        ],
+        setters: [],
         execute: function () {
             Projectile = class Projectile {
                 constructor() {
-                    this.timeVelocity = 10;
+                    this.timeVelocity = 20;
                 }
                 get universe() { return this.owner.universe; }
+                get rule() { return this.universe.rule; }
                 get spacetime() { return this.universe.spacetime; }
                 getValue(cell) {
                     if (cell.projectile == this || "undefined" === typeof cell.projectile) {
@@ -185,7 +309,7 @@ System.register("Projectile", ["app"], function (exports_4, context_4) {
                 }
                 ;
                 updateSpace(t) {
-                    const nr = app_2.rule.spaceNeighbourhoodRadius;
+                    const nr = this.rule.spaceNeighbourhoodRadius;
                     const prevSpace = this.spacetime.getSpaceAtTime(t - 1);
                     const tSpace = this.spacetime.getSpaceAtTime(t);
                     let owned = 0;
@@ -208,7 +332,7 @@ System.register("Projectile", ["app"], function (exports_4, context_4) {
                             continue;
                         }
                         const cell = tSpace[x];
-                        const value = app_2.rule.getState3(this.getValue(prevCell1), this.getValue(prevCell2), this.getValue(prevCell3));
+                        const value = this.rule.getState3(this.getValue(prevCell1), this.getValue(prevCell2), this.getValue(prevCell3));
                         if (value === 0
                             && cell.value !== 0
                             && cell.projectile
@@ -247,19 +371,19 @@ System.register("Projectile", ["app"], function (exports_4, context_4) {
                     else {
                         const owned = this.updateSpace(timeEndOfPrediction - 1);
                         if ((this.timePosition - this.timeVelocity * 2000) >= timeEndOfPrediction && owned === 0) {
-                            app_2.universe.projectiles.splice(app_2.universe.projectiles.indexOf(this), 1);
+                            this.universe.projectiles.splice(this.universe.projectiles.indexOf(this), 1);
                         }
                     }
                     this.timePosition += this.timeVelocity;
                 }
             };
-            exports_4("Projectile", Projectile);
+            exports_7("Projectile", Projectile);
         }
     };
 });
-System.register("Spacetime", [], function (exports_5, context_5) {
+System.register("Spacetime", [], function (exports_8, context_8) {
     var Spacetime;
-    var __moduleName = context_5 && context_5.id;
+    var __moduleName = context_8 && context_8.id;
     return {
         setters: [],
         execute: function () {
@@ -282,20 +406,17 @@ System.register("Spacetime", [], function (exports_5, context_5) {
                     return this.data[t % this.timeSize];
                 }
             };
-            exports_5("Spacetime", Spacetime);
+            exports_8("Spacetime", Spacetime);
         }
     };
 });
-System.register("Universe", ["utils/LehmerPrng", "app", "utils/misc", "Spacetime", "PlayerShip"], function (exports_6, context_6) {
-    var LehmerPrng_1, app_3, misc_1, Spacetime_1, PlayerShip_1, Universe;
-    var __moduleName = context_6 && context_6.id;
+System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "PlayerShip", "Rule"], function (exports_9, context_9) {
+    var LehmerPrng_2, misc_1, Spacetime_1, PlayerShip_1, Rule_1, Universe;
+    var __moduleName = context_9 && context_9.id;
     return {
         setters: [
-            function (LehmerPrng_1_1) {
-                LehmerPrng_1 = LehmerPrng_1_1;
-            },
-            function (app_3_1) {
-                app_3 = app_3_1;
+            function (LehmerPrng_2_1) {
+                LehmerPrng_2 = LehmerPrng_2_1;
             },
             function (misc_1_1) {
                 misc_1 = misc_1_1;
@@ -305,70 +426,70 @@ System.register("Universe", ["utils/LehmerPrng", "app", "utils/misc", "Spacetime
             },
             function (PlayerShip_1_1) {
                 PlayerShip_1 = PlayerShip_1_1;
+            },
+            function (Rule_1_1) {
+                Rule_1 = Rule_1_1;
             }
         ],
         execute: function () {
-            Universe = /** @class */ (() => {
-                class Universe {
-                    constructor() {
-                        this.spacetime = new Spacetime_1.Spacetime();
-                        this.player = misc_1.tap(new PlayerShip_1.PlayerShip(), ps => {
-                            ps.universe = this;
-                            ps.topX = Math.round((this.spacetime.spaceSize - ps.size) / 2);
-                        });
-                        this.projectiles = [];
-                        const t = this.spacetime.timeSize - 1 + this.spacetime.timeOffset;
-                        // for (let x = 0; x < this.spacetime[t].length; x++) {
-                        //     this.spacetime[t][x].value = Universe.getRandomState();
-                        // }
-                        // for (let _ = 0; _ < this.spacetime.length; _++) {
-                        //     this.iterate();
-                        // }
+            Universe = class Universe {
+                constructor() {
+                    this.random = new LehmerPrng_2.LehmerPrng(4242);
+                    this.rule = new Rule_1.Rule();
+                    this.spacetime = new Spacetime_1.Spacetime();
+                    this.player = misc_1.tap(new PlayerShip_1.PlayerShip(this), ps => {
+                        ps.topX = Math.round((this.spacetime.spaceSize - ps.size) / 2);
+                    });
+                    this.projectiles = [];
+                    const t = this.spacetime.timeSize - 1 + this.spacetime.timeOffset;
+                    // for (let x = 0; x < this.spacetime[t].length; x++) {
+                    //     this.spacetime[t][x].value = Universe.getRandomState();
+                    // }
+                    // for (let _ = 0; _ < this.spacetime.length; _++) {
+                    //     this.iterate();
+                    // }
+                }
+                getRandomState() {
+                    return this.random.next() % this.rule.stateCount;
+                }
+                fillMostRecentSpace() {
+                    const nr = this.rule.spaceNeighbourhoodRadius;
+                    const t = this.spacetime.timeSize - 1 + this.spacetime.timeOffset;
+                    const tSpace = this.spacetime.getSpaceAtTime(t);
+                    for (let x = 0; x < nr; x++) {
+                        tSpace[x].value = this.getRandomState();
+                        tSpace[tSpace.length - 1 - x].value = this.getRandomState();
                     }
-                    static getRandomState() {
-                        return Universe.random.next() % app_3.rule.stateCount;
-                    }
-                    fillMostRecentSpace() {
-                        const nr = app_3.rule.spaceNeighbourhoodRadius;
-                        const t = this.spacetime.timeSize - 1 + this.spacetime.timeOffset;
-                        const tSpace = this.spacetime.getSpaceAtTime(t);
-                        for (let x = 0; x < nr; x++) {
-                            tSpace[x].value = Universe.getRandomState();
-                            tSpace[tSpace.length - 1 - x].value = Universe.getRandomState();
-                        }
-                        for (let x = nr; x < tSpace.length - nr; x++) {
-                            const cell = tSpace[x];
-                            cell.value = app_3.rule.getState2((t, x) => {
-                                var cell = this.spacetime.getSpaceAtTime(t)[x];
-                                if ("undefined" === typeof cell.projectile) {
-                                    return cell.value;
-                                }
-                                return 0;
-                            }, t, x);
-                            cell.projectile = undefined;
-                            cell.dim = -1e10;
-                            cell.stepUpated = 0;
-                        }
-                    }
-                    update() {
-                        this.spacetime.performStep();
-                        this.fillMostRecentSpace();
-                        this.player.update();
-                        for (const p of [...this.projectiles]) {
-                            p.update();
-                        }
+                    for (let x = nr; x < tSpace.length - nr; x++) {
+                        const cell = tSpace[x];
+                        cell.value = this.rule.getState2((t, x) => {
+                            var cell = this.spacetime.getSpaceAtTime(t)[x];
+                            if ("undefined" === typeof cell.projectile) {
+                                return cell.value;
+                            }
+                            return 0;
+                        }, t, x);
+                        cell.projectile = undefined;
+                        cell.dim = -1e10;
+                        cell.stepUpated = 0;
                     }
                 }
-                Universe.random = new LehmerPrng_1.LehmerPrng(4242);
-                return Universe;
-            })();
-            exports_6("Universe", Universe);
+                update() {
+                    this.spacetime.performStep();
+                    this.fillMostRecentSpace();
+                    this.player.update();
+                    for (const p of [...this.projectiles]) {
+                        p.update();
+                    }
+                }
+            };
+            exports_9("Universe", Universe);
         }
     };
 });
-System.register("utils/ImageDataUint32", [], function (exports_7, context_7) {
+System.register("utils/ImageDataUint32", [], function (exports_10, context_10) {
     var ImageDataUint32;
-    var __moduleName = context_7 && context_7.id;
+    var __moduleName = context_10 && context_10.id;
     return {
         setters: [],
         execute: function () {
@@ -381,20 +502,17 @@ System.register("utils/ImageDataUint32", [], function (exports_7, context_7) {
                     this.dataUint32[y * this.width + x] = abgr;
                 }
             };
-            exports_7("ImageDataUint32", ImageDataUint32);
+            exports_10("ImageDataUint32", ImageDataUint32);
         }
     };
 });
-System.register("UniverseView", ["utils/misc", "app", "utils/ImageDataUint32"], function (exports_8, context_8) {
-    var misc_2, app_4, ImageDataUint32_1, UniverseView;
-    var __moduleName = context_8 && context_8.id;
+System.register("UniverseView", ["utils/misc", "utils/ImageDataUint32"], function (exports_11, context_11) {
+    var misc_2, ImageDataUint32_1, UniverseView;
+    var __moduleName = context_11 && context_11.id;
     return {
         setters: [
             function (misc_2_1) {
                 misc_2 = misc_2_1;
-            },
-            function (app_4_1) {
-                app_4 = app_4_1;
             },
             function (ImageDataUint32_1_1) {
                 ImageDataUint32_1 = ImageDataUint32_1_1;
@@ -402,18 +520,19 @@ System.register("UniverseView", ["utils/misc", "app", "utils/ImageDataUint32"], 
         ],
         execute: function () {
             UniverseView = class UniverseView {
-                constructor() {
+                constructor(universe) {
+                    this.universe = universe;
                     this.canvas = misc_2.tap(document.getElementById("canvas"), c => {
-                        c.width = app_4.universe.spacetime.timeSize;
-                        c.height = app_4.universe.spacetime.spaceSize;
+                        c.width = this.universe.spacetime.timeSize;
+                        c.height = this.universe.spacetime.spaceSize;
                     });
                     this.ctx = misc_2.tap(this.canvas.getContext("2d"), ctx => {
                         ctx.imageSmoothingEnabled = false;
                     });
-                    this.imageData = new ImageDataUint32_1.ImageDataUint32(this.ctx.createImageData(app_4.universe.spacetime.timeSize, app_4.universe.spacetime.spaceSize));
+                    this.imageData = new ImageDataUint32_1.ImageDataUint32(this.ctx.createImageData(this.universe.spacetime.timeSize, this.universe.spacetime.spaceSize));
                 }
                 getCellColor(cell) {
-                    const age = app_4.universe.spacetime.timeOffset - cell.dim;
+                    const age = this.universe.spacetime.timeOffset - cell.dim;
                     let ageFactor = 1 -
                         0.6 * (age < 50 ? age * 0.02 : 1) -
                         0.2 * (age < 250 ? age * 0.004 : 1) -
@@ -436,69 +555,25 @@ System.register("UniverseView", ["utils/misc", "app", "utils/ImageDataUint32"], 
                 render() {
                     const w = this.imageData.width;
                     const idd = this.imageData.dataUint32;
-                    for (let t = 0; t < app_4.universe.spacetime.timeSize; t++) {
-                        const space = app_4.universe.spacetime.getSpaceAtTime(t + app_4.universe.spacetime.timeOffset);
+                    for (let t = 0; t < this.universe.spacetime.timeSize; t++) {
+                        const space = this.universe.spacetime.getSpaceAtTime(t + this.universe.spacetime.timeOffset);
                         for (let x = 0; x < space.length; x++) {
                             idd[x * w + t] = this.getCellColor(space[x]);
                         }
                     }
-                    for (let x = app_4.universe.player.topX; x <= app_4.universe.player.bottomX; x++) {
+                    for (let x = this.universe.player.topX; x <= this.universe.player.bottomX; x++) {
                         this.imageData.setPixel(100, x, 0xFF00FF00);
                     }
                     this.ctx.putImageData(this.imageData, 0, 0);
                 }
             };
-            exports_8("UniverseView", UniverseView);
+            exports_11("UniverseView", UniverseView);
         }
     };
 });
-System.register("Rule", [], function (exports_9, context_9) {
-    var Rule;
-    var __moduleName = context_9 && context_9.id;
-    return {
-        setters: [],
-        execute: function () {
-            Rule = class Rule {
-                constructor() {
-                    this.stateCount = 3;
-                    this.ruleSpaceSizePower = 3 * (this.stateCount - 1) + 1;
-                    this.spaceNeighbourhoodRadius = 1;
-                    this.code = 1815;
-                    this.tableString = (this.code).toString(this.stateCount).padStart(this.ruleSpaceSizePower, "0");
-                    this.table = Array.from(this.tableString).reverse().map(x => +x);
-                }
-                getState(spacetime, t, x) {
-                    const sum = (spacetime[t - 1][x - 1].value)
-                        + (spacetime[t - 1][x].value)
-                        + (spacetime[t - 1][x + 1].value);
-                    return this.table[sum];
-                }
-                getState2(getValue, t, x) {
-                    const sum = getValue(t - 1, x - 1)
-                        + getValue(t - 1, x)
-                        + getValue(t - 1, x + 1);
-                    return this.table[sum];
-                }
-                getState3(cell_m1_m1, cell_m1_z0, cell_m1_p1) {
-                    const sum = cell_m1_m1
-                        + cell_m1_z0
-                        + cell_m1_p1;
-                    return this.table[sum];
-                }
-                getState1(spacetime, t, x) {
-                    const sum = (spacetime[t - 1][x - 1])
-                        + (spacetime[t - 1][x])
-                        + (spacetime[t - 1][x + 1]);
-                    return this.table[sum];
-                }
-            };
-            exports_9("Rule", Rule);
-        }
-    };
-});
-System.register("CardView", ["utils/misc", "utils/ImageDataUint32"], function (exports_10, context_10) {
-    var misc_3, ImageDataUint32_2, CardView;
-    var __moduleName = context_10 && context_10.id;
+System.register("WeaponView", ["utils/misc", "utils/ImageDataUint32"], function (exports_12, context_12) {
+    var misc_3, ImageDataUint32_2, WeaponView;
+    var __moduleName = context_12 && context_12.id;
     return {
         setters: [
             function (misc_3_1) {
@@ -509,26 +584,30 @@ System.register("CardView", ["utils/misc", "utils/ImageDataUint32"], function (e
             }
         ],
         execute: function () {
-            CardView = class CardView {
-                constructor(card) {
-                    this.card = card;
+            WeaponView = class WeaponView {
+                constructor(weapon) {
+                    this.weapon = weapon;
                     this.canvas = misc_3.tap(document.createElement("canvas"), c => {
-                        c.width = this.card.timeSize;
-                        c.height = this.card.spaceSize;
+                        c.width = this.weapon.timeSize;
+                        c.height = this.weapon.spaceSize;
                     });
                     this.ctx = misc_3.tap(this.canvas.getContext("2d"), ctx => {
                         ctx.imageSmoothingEnabled = false;
                     });
-                    this.imageData = new ImageDataUint32_2.ImageDataUint32(this.ctx.createImageData(this.card.timeSize, this.card.spaceSize));
+                    this.imageData = new ImageDataUint32_2.ImageDataUint32(this.ctx.createImageData(this.weapon.timeSize, this.weapon.spaceSize));
                     this.colorMap = [0xFF000000, 0xFF808080, 0xFFFFFFFF];
+                    this.colorBookmarkedMap = [0xFF000000, 0xFF800080, 0xFFFF00FF];
                     this.render();
                 }
                 setPixel(x, y, value) {
-                    this.imageData.setPixel(x, y, this.colorMap[value]);
+                    const colorMap = this.weapon.isBookmarked
+                        ? this.colorBookmarkedMap
+                        : this.colorMap;
+                    this.imageData.setPixel(x, y, colorMap[value]);
                 }
                 render() {
-                    for (let t = 0; t < this.card.spacetime.length; t++) {
-                        const space = this.card.spacetime[t];
+                    for (let t = 0; t < this.weapon.spacetime.length; t++) {
+                        const space = this.weapon.spacetime[t];
                         for (let x = 0; x < space.length; x++) {
                             this.setPixel(t, x, space[x]);
                         }
@@ -536,61 +615,38 @@ System.register("CardView", ["utils/misc", "utils/ImageDataUint32"], function (e
                     this.ctx.putImageData(this.imageData, 0, 0);
                 }
             };
-            exports_10("CardView", CardView);
+            exports_12("WeaponView", WeaponView);
         }
     };
 });
-System.register("DeckView", ["CardView", "app"], function (exports_11, context_11) {
-    var CardView_1, app_5, DeckView;
-    var __moduleName = context_11 && context_11.id;
-    return {
-        setters: [
-            function (CardView_1_1) {
-                CardView_1 = CardView_1_1;
-            },
-            function (app_5_1) {
-                app_5 = app_5_1;
-            }
-        ],
-        execute: function () {
-            DeckView = class DeckView {
-                constructor() {
-                    this.el = document.getElementById("deck");
-                    for (let i = 0; i < app_5.deck.cards.length; i++) {
-                        const card = app_5.deck.cards[i];
-                        const cardView = new CardView_1.CardView(card);
-                        this.el.appendChild(cardView.canvas);
-                        cardView.canvas.addEventListener("click", () => app_5.deck.selectedCard = card);
-                    }
-                }
-            };
-            exports_11("DeckView", DeckView);
-        }
-    };
-});
-System.register("Deck", ["Card"], function (exports_12, context_12) {
-    var Card_1, Deck;
-    var __moduleName = context_12 && context_12.id;
-    return {
-        setters: [
-            function (Card_1_1) {
-                Card_1 = Card_1_1;
-            }
-        ],
-        execute: function () {
-            Deck = class Deck {
-                constructor() {
-                    this.cards = Array.from({ length: 8 }, () => Card_1.Card.generateRandomCard());
-                    this.selectedCard = this.cards[0];
-                }
-            };
-            exports_12("Deck", Deck);
-        }
-    };
-});
-System.register("FpsMeter", [], function (exports_13, context_13) {
-    var FpsMeter;
+System.register("WeaponaryView", ["WeaponView"], function (exports_13, context_13) {
+    var WeaponView_1, WeaponaryView;
     var __moduleName = context_13 && context_13.id;
+    return {
+        setters: [
+            function (WeaponView_1_1) {
+                WeaponView_1 = WeaponView_1_1;
+            }
+        ],
+        execute: function () {
+            WeaponaryView = class WeaponaryView {
+                constructor(weaponary) {
+                    this.weaponary = weaponary;
+                    this.el = document.getElementById("deck");
+                    this.weaponViews = this.weaponary.weapons.map(weapon => {
+                        const weaponView = new WeaponView_1.WeaponView(weapon);
+                        this.el.appendChild(weaponView.canvas);
+                        return weaponView;
+                    });
+                }
+            };
+            exports_13("WeaponaryView", WeaponaryView);
+        }
+    };
+});
+System.register("FpsMeter", [], function (exports_14, context_14) {
+    var FpsMeter;
+    var __moduleName = context_14 && context_14.id;
     return {
         setters: [],
         execute: function () {
@@ -616,59 +672,179 @@ System.register("FpsMeter", [], function (exports_13, context_13) {
                     this.lastUpdate = time;
                 }
             };
-            exports_13("FpsMeter", FpsMeter);
+            exports_14("FpsMeter", FpsMeter);
         }
     };
 });
-System.register("app", ["Universe", "utils/LehmerPrng", "UniverseView", "Rule", "DeckView", "Deck", "game-inputs", "FpsMeter"], function (exports_14, context_14) {
-    var Universe_1, LehmerPrng_2, UniverseView_1, Rule_1, DeckView_1, Deck_1, game_inputs_1, FpsMeter_1, inputs, random, deckRandom, rule, universe, universeView, deck, deckView, fpsMeter, upsMeter, fpsDisplay, upsDisplay, stepDisplay;
-    var __moduleName = context_14 && context_14.id;
-    function update(time) {
-        upsMeter.update(time);
-        universe.update();
-        inputs.tick();
-    }
-    exports_14("update", update);
-    function render(time) {
-        var _a, _b, _c, _d, _e, _f, _g, _h;
-        fpsMeter.update(time);
-        fpsDisplay.textContent =
-            `fps: ${(_b = (_a = fpsMeter.fpsHistorical) === null || _a === void 0 ? void 0 : _a.toFixed(2)) !== null && _b !== void 0 ? _b : "n/a"} (${(_d = (_c = fpsMeter.fps) === null || _c === void 0 ? void 0 : _c.toFixed(2)) !== null && _d !== void 0 ? _d : "n/a"})`;
-        upsDisplay.textContent =
-            `ups: ${(_f = (_e = upsMeter.fpsHistorical) === null || _e === void 0 ? void 0 : _e.toFixed(2)) !== null && _f !== void 0 ? _f : "n/a"} (${(_h = (_g = upsMeter.fps) === null || _g === void 0 ? void 0 : _g.toFixed(2)) !== null && _h !== void 0 ? _h : "n/a"})`;
-        stepDisplay.textContent = "step: " + universe.spacetime.timeOffset;
-        universeView.render();
-    }
-    exports_14("render", render);
+System.register("Application", ["Universe", "UniverseView", "WeaponaryView", "game-inputs", "FpsMeter", "utils/misc"], function (exports_15, context_15) {
+    var Universe_1, UniverseView_1, WeaponaryView_1, game_inputs_1, FpsMeter_1, misc_4, Application;
+    var __moduleName = context_15 && context_15.id;
     return {
         setters: [
             function (Universe_1_1) {
                 Universe_1 = Universe_1_1;
             },
-            function (LehmerPrng_2_1) {
-                LehmerPrng_2 = LehmerPrng_2_1;
-            },
             function (UniverseView_1_1) {
                 UniverseView_1 = UniverseView_1_1;
             },
-            function (Rule_1_1) {
-                Rule_1 = Rule_1_1;
-            },
-            function (DeckView_1_1) {
-                DeckView_1 = DeckView_1_1;
-            },
-            function (Deck_1_1) {
-                Deck_1 = Deck_1_1;
+            function (WeaponaryView_1_1) {
+                WeaponaryView_1 = WeaponaryView_1_1;
             },
             function (game_inputs_1_1) {
                 game_inputs_1 = game_inputs_1_1;
             },
             function (FpsMeter_1_1) {
                 FpsMeter_1 = FpsMeter_1_1;
+            },
+            function (misc_4_1) {
+                misc_4 = misc_4_1;
             }
         ],
         execute: function () {
             // import * as Tone from "tone";
+            Application = class Application {
+                constructor() {
+                    this.paused = false;
+                    this.inputs = misc_4.tap(game_inputs_1.default(undefined, { preventDefaults: true }), inputs => {
+                        inputs.bind("move-up", "<up>");
+                        inputs.bind("move-down", "<down>");
+                        inputs.bind("move-slow", "<left>");
+                        inputs.bind("move-fast", "<right>");
+                        inputs.bind("fireWeapon1", "A");
+                        inputs.bind("fireWeapon2", "S");
+                        inputs.bind("fireWeapon3", "D");
+                        inputs.bind("fireWeapon4", "F");
+                        inputs.bind("fireWeapon5", "Z");
+                        inputs.bind("fireWeapon6", "X");
+                        inputs.bind("fireWeapon7", "C");
+                        inputs.bind("fireWeapon8", "V");
+                        inputs.bind("reroll", "<control>");
+                        inputs.bind("bookmark", "<shift>");
+                        inputs.down.on("fireWeapon1", () => this.fireOrReroll(0));
+                        inputs.down.on("fireWeapon2", () => this.fireOrReroll(1));
+                        inputs.down.on("fireWeapon3", () => this.fireOrReroll(2));
+                        inputs.down.on("fireWeapon4", () => this.fireOrReroll(3));
+                        inputs.down.on("fireWeapon5", () => this.fireOrReroll(4));
+                        inputs.down.on("fireWeapon6", () => this.fireOrReroll(5));
+                        inputs.down.on("fireWeapon7", () => this.fireOrReroll(6));
+                        inputs.down.on("fireWeapon8", () => this.fireOrReroll(7));
+                    });
+                    this.universe = new Universe_1.Universe();
+                    this.universeView = new UniverseView_1.UniverseView(this.universe);
+                    this.weaponaryView = new WeaponaryView_1.WeaponaryView(this.universe.player.weaponary);
+                    // synth = new Tone.Synth().toMaster();
+                    this.fpsMeter = new FpsMeter_1.FpsMeter();
+                    this.upsMeter = new FpsMeter_1.FpsMeter();
+                    this.fpsDisplay = document.getElementById("fps");
+                    this.upsDisplay = document.getElementById("ups");
+                    this.stepDisplay = document.getElementById("step");
+                }
+                update(time) {
+                    this.upsMeter.update(time);
+                    this.universe.update();
+                    if (this.inputs.state["move-up"] && this.universe.player.canMoveUp()) {
+                        this.universe.player.moveUp();
+                    }
+                    if (this.inputs.state["move-down"] && this.universe.player.canMoveDown()) {
+                        this.universe.player.moveDown();
+                    }
+                    this.inputs.tick();
+                }
+                render(time) {
+                    this.fpsMeter.update(time);
+                    function renderFpsText(fps) {
+                        var _a;
+                        return (_a = fps === null || fps === void 0 ? void 0 : fps.toFixed(2)) !== null && _a !== void 0 ? _a : "n/a";
+                    }
+                    this.fpsDisplay.textContent =
+                        `fps: ${renderFpsText(this.fpsMeter.fpsHistorical)} (${renderFpsText(this.fpsMeter.fps)})`;
+                    this.upsDisplay.textContent =
+                        `ups: ${renderFpsText(this.upsMeter.fpsHistorical)} (${renderFpsText(this.upsMeter.fps)})`;
+                    this.stepDisplay.textContent =
+                        "step: " + this.universe.spacetime.timeOffset;
+                    this.universeView.render();
+                }
+                fireOrReroll(weaponIndex) {
+                    const weaponary = this.weaponaryView.weaponary;
+                    const weaponaryView = this.weaponaryView;
+                    const weapon = weaponary.weapons[weaponIndex];
+                    const weaponView = weaponaryView.weaponViews[weaponIndex];
+                    if (this.inputs.state["reroll"]) {
+                        if (!weapon.isBookmarked) {
+                            weaponary.weapons[weaponIndex] = weaponary.generateRandomWeapon();
+                            weaponView.weapon = weaponary.weapons[weaponIndex];
+                            weaponView.render();
+                        }
+                    }
+                    else if (this.inputs.state["bookmark"]) {
+                        weapon.isBookmarked = !weapon.isBookmarked;
+                        weaponView.render();
+                        weaponary.save();
+                    }
+                    else {
+                        this.universe.player.fire(weapon);
+                    }
+                }
+                run() {
+                    const initialUps = 240;
+                    const upsStep = 4;
+                    let targetUps = initialUps;
+                    window.addEventListener("keypress", ev => {
+                        console.log(ev.code);
+                        switch (ev.code) {
+                            case "Space": {
+                                this.paused = !this.paused;
+                                break;
+                            }
+                            case "Backquote": {
+                                targetUps *= upsStep;
+                                if (targetUps > initialUps * upsStep) {
+                                    targetUps = initialUps / upsStep;
+                                }
+                                break;
+                            }
+                        }
+                    });
+                    let lastUpdateTime = undefined;
+                    const requestAnimationFrameCallback = (time) => {
+                        let tups = targetUps;
+                        if (this.inputs.state["move-fast"]) {
+                            tups *= upsStep;
+                        }
+                        if (this.inputs.state["move-slow"]) {
+                            tups /= upsStep;
+                        }
+                        if ("undefined" !== typeof lastUpdateTime) {
+                            while (lastUpdateTime < time) {
+                                if (!this.paused) {
+                                    this.update(lastUpdateTime);
+                                }
+                                lastUpdateTime += 1000 / tups;
+                            }
+                        }
+                        else {
+                            lastUpdateTime = time;
+                        }
+                        this.render(time);
+                        requestAnimationFrame(requestAnimationFrameCallback);
+                    };
+                    requestAnimationFrame(requestAnimationFrameCallback);
+                }
+            };
+            exports_15("Application", Application);
+        }
+    };
+});
+System.register("main", ["Application"], function (exports_16, context_16) {
+    var Application_1, app;
+    var __moduleName = context_16 && context_16.id;
+    return {
+        setters: [
+            function (Application_1_1) {
+                Application_1 = Application_1_1;
+            }
+        ],
+        execute: function () {
             {
                 const _Math_random = Math.random;
                 Math.random = function () {
@@ -676,133 +852,9 @@ System.register("app", ["Universe", "utils/LehmerPrng", "UniverseView", "Rule", 
                     return _Math_random();
                 };
             }
-            exports_14("inputs", inputs = game_inputs_1.default());
-            exports_14("random", random = new LehmerPrng_2.LehmerPrng(433783));
-            exports_14("deckRandom", deckRandom = new LehmerPrng_2.LehmerPrng(433783));
-            exports_14("rule", rule = new Rule_1.Rule());
-            exports_14("universe", universe = new Universe_1.Universe());
-            exports_14("universeView", universeView = new UniverseView_1.UniverseView());
-            exports_14("deck", deck = new Deck_1.Deck());
-            exports_14("deckView", deckView = new DeckView_1.DeckView());
-            // export const synth = new Tone.Synth().toMaster();
-            inputs.bind("move-up", "<up>");
-            inputs.bind("move-down", "<down>");
-            inputs.bind("fire1", "Q");
-            inputs.bind("fire2", "W");
-            inputs.bind("fire3", "E");
-            inputs.bind("fire4", "R");
-            inputs.bind("fire5", "A");
-            inputs.bind("fire6", "S");
-            inputs.bind("fire7", "D");
-            inputs.bind("fire8", "F");
-            fpsMeter = new FpsMeter_1.FpsMeter();
-            upsMeter = new FpsMeter_1.FpsMeter();
-            fpsDisplay = document.getElementById("fps");
-            upsDisplay = document.getElementById("ups");
-            stepDisplay = document.getElementById("step");
-        }
-    };
-});
-System.register("Card", ["app"], function (exports_15, context_15) {
-    var app_6, Card;
-    var __moduleName = context_15 && context_15.id;
-    return {
-        setters: [
-            function (app_6_1) {
-                app_6 = app_6_1;
-            }
-        ],
-        execute: function () {
-            Card = class Card {
-                constructor(cardSpace) {
-                    this.cardSpace = cardSpace;
-                    const spaceSize = this.cardSize * 10 + 1;
-                    const timeSize = spaceSize;
-                    this.spacetime = Array.from({ length: timeSize }, () => new Uint8Array(spaceSize));
-                    const xMargin = (this.spacetime[0].length - this.cardSpace.length) / 2;
-                    for (let x = 0; x < this.cardSpace.length; x++) {
-                        this.spacetime[0][x + xMargin] = this.cardSpace[x];
-                    }
-                    const nr = app_6.rule.spaceNeighbourhoodRadius;
-                    for (let t = 1; t < this.spacetime.length; t++) {
-                        const space = this.spacetime[t];
-                        for (let x = nr; x < space.length - nr; x++) {
-                            space[x] = app_6.rule.getState1(this.spacetime, t, x);
-                        }
-                    }
-                    for (let t = 0; t < timeSize; t++) {
-                        const space = new Uint8Array(this.cardSize * 2 + 1);
-                        const xMargin = (spaceSize - space.length) / 2;
-                        for (let x = 0; x < space.length; x++) {
-                            space[x] = this.spacetime[t][x + xMargin];
-                        }
-                        this.spacetime[t] = space;
-                    }
-                }
-                static getRandomState() {
-                    return app_6.deckRandom.next() % app_6.rule.stateCount;
-                }
-                static createCardFromString(cardString) {
-                    return new Card(new Uint8Array(Array.from(cardString).map(x => +x)));
-                }
-                static generateRandomCard() {
-                    const cardSize = 45;
-                    return new Card(new Uint8Array(Array.from({ length: cardSize }, () => Card.getRandomState())));
-                }
-                get cardSize() { return this.cardSpace.length; }
-                get spaceSize() { return this.spacetime[0].length; }
-                get timeSize() { return this.spacetime.length; }
-            };
-            exports_15("Card", Card);
-        }
-    };
-});
-System.register("main", ["app"], function (exports_16, context_16) {
-    var app, initialUps, upsStep, targetUps, paused, lastUpdateTime;
-    var __moduleName = context_16 && context_16.id;
-    function requestAnimationFrameCallback(time) {
-        if ("undefined" !== typeof lastUpdateTime) {
-            while (lastUpdateTime < time) {
-                app.update(lastUpdateTime);
-                lastUpdateTime += 1000 / targetUps;
-            }
-        }
-        else {
-            lastUpdateTime = time;
-        }
-        app.render(time);
-        requestAnimationFrame(requestAnimationFrameCallback);
-    }
-    return {
-        setters: [
-            function (app_7) {
-                app = app_7;
-            }
-        ],
-        execute: function () {
-            Object.assign(window, app);
-            initialUps = 300;
-            upsStep = 5;
-            targetUps = initialUps;
-            paused = false;
-            window.addEventListener("keypress", ev => {
-                console.log(ev.code);
-                switch (ev.code) {
-                    case "Space": {
-                        paused = !paused;
-                        break;
-                    }
-                    case "Backquote": {
-                        targetUps *= upsStep;
-                        if (targetUps > initialUps * upsStep) {
-                            targetUps = initialUps / upsStep;
-                        }
-                        break;
-                    }
-                }
-            });
-            lastUpdateTime = undefined;
-            requestAnimationFrame(requestAnimationFrameCallback);
+            app = new Application_1.Application();
+            Object.assign(window, { app });
+            app.run();
         }
     };
 });

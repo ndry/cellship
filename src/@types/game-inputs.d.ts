@@ -1,9 +1,9 @@
 declare module "game-inputs" {
     function createInputs(element?: HTMLElement, options?: {
-        preventDefaults: boolean,
-        stopPropagation: boolean,
-        allowContextMenu: boolean,
-        disabled: boolean,
+        preventDefaults?: boolean,
+        stopPropagation?: boolean,
+        allowContextMenu?: boolean,
+        disabled?: boolean,
     }): {
         preventDefaults: boolean;
         stopPropagation: boolean;

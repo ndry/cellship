@@ -1,38 +1,38 @@
 import {LehmerPrng} from "./utils/LehmerPrng";
-import {rule} from "./app";
 import { tap } from "./utils/misc";
 import { Spacetime } from "./Spacetime";
 import { PlayerShip } from "./PlayerShip";
 import { Projectile } from "./Projectile";
+import { Rule } from "./Rule";
 
 export class Universe {
-    static random = new LehmerPrng(4242);
-    static getRandomState() {
-        return Universe.random.next() % rule.stateCount;
+    random = new LehmerPrng(4242);
+    rule = new Rule();
+    getRandomState() {
+        return this.random.next() % this.rule.stateCount;
     }
 
     spacetime = new Spacetime();
 
-    player = tap(new PlayerShip(), ps => {
-        ps.universe = this;
+    player = tap(new PlayerShip(this), ps => {
         ps.topX = Math.round((this.spacetime.spaceSize - ps.size) / 2);
     });
 
     projectiles: Projectile[] = [];
 
     fillMostRecentSpace() {
-        const nr = rule.spaceNeighbourhoodRadius;
+        const nr = this.rule.spaceNeighbourhoodRadius;
         const t = this.spacetime.timeSize - 1 + this.spacetime.timeOffset;
         const tSpace = this.spacetime.getSpaceAtTime(t);
 
         for (let x = 0; x < nr; x++) {
-            tSpace[x].value = Universe.getRandomState();
-            tSpace[tSpace.length - 1 - x].value = Universe.getRandomState();
+            tSpace[x].value = this.getRandomState();
+            tSpace[tSpace.length - 1 - x].value = this.getRandomState();
         }
         for (let x = nr; x < tSpace.length - nr; x++) {
             const cell = tSpace[x];
 
-            cell.value = rule.getState2((t, x) => {
+            cell.value = this.rule.getState2((t, x) => {
                 var cell = this.spacetime.getSpaceAtTime(t)[x];
                 if ("undefined" === typeof cell.projectile) {
                     return cell.value;

@@ -1,13 +1,13 @@
-import { rule, universe } from "./app";
 import { PlayerShip } from "./PlayerShip";
 import { Cell } from "./Spacetime";
 
 export class Projectile {
     owner: PlayerShip;
     get universe() { return this.owner.universe; }
+    get rule() { return this.universe.rule; }
     get spacetime() { return this.universe.spacetime; }
 
-    timeVelocity = 10;
+    timeVelocity = 20;
     timeCreated: number;
     timePosition: number;
 
@@ -19,7 +19,7 @@ export class Projectile {
     };
 
     updateSpace(t: number) {
-        const nr = rule.spaceNeighbourhoodRadius;
+        const nr = this.rule.spaceNeighbourhoodRadius;
         const prevSpace = this.spacetime.getSpaceAtTime(t - 1);
         const tSpace = this.spacetime.getSpaceAtTime(t);
         
@@ -45,7 +45,7 @@ export class Projectile {
             }
 
             const cell = tSpace[x];
-            const value = rule.getState3(
+            const value = this.rule.getState3(
                 this.getValue(prevCell1),
                 this.getValue(prevCell2),
                 this.getValue(prevCell3));
@@ -95,7 +95,7 @@ export class Projectile {
         } else {
             const owned = this.updateSpace(timeEndOfPrediction - 1);
             if ((this.timePosition - this.timeVelocity * 2000) >= timeEndOfPrediction && owned === 0) {
-                universe.projectiles.splice(universe.projectiles.indexOf(this), 1);
+                this.universe.projectiles.splice(this.universe.projectiles.indexOf(this), 1);
             }
         }
 

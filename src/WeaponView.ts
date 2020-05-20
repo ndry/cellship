@@ -1,13 +1,13 @@
 import {tap} from "./utils/misc";
 import {ImageDataUint32} from "./utils/ImageDataUint32";
-import {Card} from "./Card";
+import {Weapon} from "./Weapon";
 
-export class CardView {
+export class WeaponView {
     canvas = tap(
         document.createElement("canvas"),
         c => {
-            c.width = this.card.timeSize;
-            c.height = this.card.spaceSize;
+            c.width = this.weapon.timeSize;
+            c.height = this.weapon.spaceSize;
         });
     ctx = tap(
         this.canvas.getContext("2d")!,
@@ -16,23 +16,27 @@ export class CardView {
         });
     imageData = new ImageDataUint32(
         this.ctx.createImageData(
-            this.card.timeSize,
-            this.card.spaceSize));
+            this.weapon.timeSize,
+            this.weapon.spaceSize));
     colorMap = [0xFF000000, 0xFF808080, 0xFFFFFFFF];
+    colorBookmarkedMap = [0xFF000000, 0xFF800080, 0xFFFF00FF];
 
     constructor(
-        public readonly card: Card,
+        public weapon: Weapon,
     ) {
         this.render();
     }
 
     setPixel(x: number, y: number, value: number) {
-        this.imageData.setPixel(x, y, this.colorMap[value]);
+        const colorMap = this.weapon.isBookmarked
+            ? this.colorBookmarkedMap 
+            : this.colorMap;
+        this.imageData.setPixel(x, y, colorMap[value]);
     }
 
     render() {
-        for (let t = 0; t < this.card.spacetime.length; t++) {
-            const space = this.card.spacetime[t];
+        for (let t = 0; t < this.weapon.spacetime.length; t++) {
+            const space = this.weapon.spacetime[t];
             for (let x = 0; x < space.length; x++) {
                 this.setPixel(t, x, space[x]);
             }
