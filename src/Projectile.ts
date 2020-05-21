@@ -19,7 +19,7 @@ export class Projectile {
     };
 
     updateSpace(t: number) {
-        const nr = this.rule.spaceNeighbourhoodRadius;
+        const nr = this.rule.space.spaceNeighbourhoodRadius;
         const prevSpace = this.spacetime.getSpaceAtTime(t - 1);
         const tSpace = this.spacetime.getSpaceAtTime(t);
         

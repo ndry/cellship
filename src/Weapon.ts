@@ -1,4 +1,3 @@
-import { Weaponary } from "./Weaponary";
 import { Rule } from "./Rule";
 
 export class Weapon {
@@ -23,7 +22,7 @@ export class Weapon {
         for (let x = 0; x < this.space.length; x++) {
             this.spacetime[0][x + xMargin] = this.space[x];
         }
-        const nr = rule.spaceNeighbourhoodRadius;
+        const nr = rule.space.spaceNeighbourhoodRadius;
         for (let t = 1; t < this.spacetime.length; t++) {
             const space = this.spacetime[t];
             for (let x = nr; x < space.length - nr; x++) {

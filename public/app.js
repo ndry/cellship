@@ -52,100 +52,135 @@ System.register("utils/misc", [], function (exports_2, context_2) {
         }
     };
 });
-System.register("Rule", [], function (exports_3, context_3) {
-    var Rule;
+System.register("RuleSpace", ["Rule"], function (exports_3, context_3) {
+    var Rule_1, RuleSpace;
     var __moduleName = context_3 && context_3.id;
+    return {
+        setters: [
+            function (Rule_1_1) {
+                Rule_1 = Rule_1_1;
+            }
+        ],
+        execute: function () {
+            RuleSpace = class RuleSpace {
+                constructor() {
+                    this.id = "3st_1nr_sym_v0";
+                    this.stateCount = 3;
+                    this.spaceNeighbourhoodRadius = 1;
+                    this.sizePower = 6 * this.stateCount;
+                    this.size = Math.pow(this.stateCount, this.sizePower);
+                    this.nsmap = {
+                        a: [
+                            [0, 1, 2],
+                            [1, 3, 4],
+                            [2, 4, 5],
+                        ],
+                        f(n1, n2) {
+                            if (n1 !== 0) {
+                                if (n2 !== 0) {
+                                    return n2 + n1 + 1;
+                                }
+                                return n1;
+                            }
+                            return n2;
+                        },
+                        n1s: [0, 0, 0, 1, 1, 2],
+                        n2s: [0, 1, 2, 1, 2, 2],
+                    };
+                    this.groupCombinations = [
+                        [0, 1, 2],
+                        [0, 2, 1],
+                        [1, 0, 2],
+                        [1, 2, 0],
+                        [2, 0, 1],
+                        [2, 1, 0],
+                    ];
+                    this.isMainEntryInCombinationGroup_t = Array.from({ length: this.sizePower });
+                    this.isMainEntryInCombinationGroup_tc = Array.from({ length: this.sizePower });
+                }
+                isMainEntryInCombinationGroup(code) {
+                    const t = this.isMainEntryInCombinationGroup_t;
+                    const tc = this.isMainEntryInCombinationGroup_tc;
+                    const combinations = this.groupCombinations;
+                    const n1s = this.nsmap.n1s;
+                    const n2s = this.nsmap.n2s;
+                    const nsmapa = this.nsmap.a;
+                    const stateCount = this.stateCount;
+                    const generateRuleTableFromCode = this.generateRuleTableFromCode;
+                    const generateCodeFromRuleTable = this.generateCodeFromRuleTable;
+                    generateRuleTableFromCode(code, t);
+                    for (let ci = 0; ci < combinations.length; ci++) {
+                        const combination = combinations[ci];
+                        for (let n = 0; n < n1s.length; n++) {
+                            const n1c = combination[n1s[n]];
+                            const n2c = combination[n2s[n]];
+                            const nc = nsmapa[n1c][n2c];
+                            for (let c = 0; c < stateCount; c++) {
+                                const cc = combination[c];
+                                const state = n * stateCount + c;
+                                const statec = nc * stateCount + cc;
+                                tc[statec] = combination[t[state]];
+                            }
+                        }
+                        let combinationCode = generateCodeFromRuleTable(tc);
+                        if (combinationCode < code) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                generateRuleTableFromCode(code, table = Array.from({ length: this.sizePower })) {
+                    for (let x = table.length - 1; x >= 0; x--) {
+                        code = (code - (table[x] = code % 3)) / 3;
+                    }
+                    return table;
+                }
+                generateCodeFromRuleTable(table) {
+                    let code = 0;
+                    for (let x = 0; x < table.length; x++) {
+                        code *= 3;
+                        code += table[x];
+                    }
+                    return code;
+                }
+                generateRule(code) {
+                    return new Rule_1.Rule(this, code);
+                }
+                getPrestate(cell_m1_m1, cell_m1_z0, cell_m1_p1) {
+                    const n = this.nsmap.f(cell_m1_m1, cell_m1_p1);
+                    let state = n * this.stateCount + cell_m1_z0;
+                    return state;
+                }
+            };
+            exports_3("RuleSpace", RuleSpace);
+        }
+    };
+});
+System.register("Rule", [], function (exports_4, context_4) {
+    var Rule;
+    var __moduleName = context_4 && context_4.id;
     return {
         setters: [],
         execute: function () {
             Rule = class Rule {
-                constructor() {
-                    this.id = "3st_1nr_total_1815";
-                    this.stateCount = 3;
-                    this.ruleSpaceSizePower = 3 * (this.stateCount - 1) + 1;
-                    this.spaceNeighbourhoodRadius = 1;
-                    this.code = 1815;
-                    this.tableString = (this.code).toString(this.stateCount).padStart(this.ruleSpaceSizePower, "0");
-                    this.table = Array.from(this.tableString).reverse().map(x => +x);
-                }
-                getState(spacetime, t, x) {
-                    const sum = (spacetime[t - 1][x - 1].value)
-                        + (spacetime[t - 1][x].value)
-                        + (spacetime[t - 1][x + 1].value);
-                    return this.table[sum];
-                }
-                getState2(getValue, t, x) {
-                    const sum = getValue(t - 1, x - 1)
-                        + getValue(t - 1, x)
-                        + getValue(t - 1, x + 1);
-                    return this.table[sum];
+                constructor(space, code) {
+                    this.space = space;
+                    this.code = code;
+                    this.table = this.space.generateRuleTableFromCode(this.code);
+                    this.tableString = this.table.join("");
+                    this.desc = `${this.space.id}_${this.code}_${this.tableString}`;
                 }
                 getState3(cell_m1_m1, cell_m1_z0, cell_m1_p1) {
-                    const sum = cell_m1_m1
-                        + cell_m1_z0
-                        + cell_m1_p1;
-                    return this.table[sum];
+                    return this.table[this.space.getPrestate(cell_m1_m1, cell_m1_z0, cell_m1_p1)];
                 }
                 getState1(spacetime, t, x) {
-                    const sum = (spacetime[t - 1][x - 1])
-                        + (spacetime[t - 1][x])
-                        + (spacetime[t - 1][x + 1]);
-                    return this.table[sum];
+                    return this.getState3(spacetime[t - 1][x - 1], spacetime[t - 1][x], spacetime[t - 1][x + 1]);
+                }
+                getState2(getValue, t, x) {
+                    return this.getState3(getValue(t - 1, x - 1), getValue(t - 1, x), getValue(t - 1, x + 1));
                 }
             };
-            exports_3("Rule", Rule);
-        }
-    };
-});
-System.register("Weaponary", ["Weapon", "utils/LehmerPrng"], function (exports_4, context_4) {
-    var Weapon_1, LehmerPrng_1, Weaponary;
-    var __moduleName = context_4 && context_4.id;
-    return {
-        setters: [
-            function (Weapon_1_1) {
-                Weapon_1 = Weapon_1_1;
-            },
-            function (LehmerPrng_1_1) {
-                LehmerPrng_1 = LehmerPrng_1_1;
-            }
-        ],
-        execute: function () {
-            Weaponary = class Weaponary {
-                constructor(rule) {
-                    this.rule = rule;
-                    this.random = new LehmerPrng_1.LehmerPrng(Math.floor(Date.now()));
-                    this.weapons = this.loadOrGenerate();
-                }
-                generateRandomWeapon() {
-                    const getRandomState = () => {
-                        return this.random.next() % this.rule.stateCount;
-                    };
-                    const size = 45;
-                    return new Weapon_1.Weapon(this.rule, Array.from({ length: size }, getRandomState));
-                }
-                save() {
-                    localStorage.setItem(`${this.rule.id}_weaponary`, JSON.stringify(this.weapons.map(w => w.isBookmarked ? w.space : undefined)));
-                }
-                loadOrGenerate() {
-                    const itemJson = localStorage.getItem(`${this.rule.id}_weaponary`);
-                    const weapons = Array.from({ length: 8 });
-                    if (itemJson !== null) {
-                        const item = JSON.parse(itemJson);
-                        for (let i = 0; i < weapons.length; i++) {
-                            const itemi = item[i];
-                            if (itemi) {
-                                weapons[i] = new Weapon_1.Weapon(this.rule, itemi);
-                                weapons[i].isBookmarked = true;
-                            }
-                            else {
-                                weapons[i] = this.generateRandomWeapon();
-                            }
-                        }
-                    }
-                    return weapons;
-                }
-            };
-            exports_4("Weaponary", Weaponary);
+            exports_4("Rule", Rule);
         }
     };
 });
@@ -167,7 +202,7 @@ System.register("Weapon", [], function (exports_5, context_5) {
                     for (let x = 0; x < this.space.length; x++) {
                         this.spacetime[0][x + xMargin] = this.space[x];
                     }
-                    const nr = rule.spaceNeighbourhoodRadius;
+                    const nr = rule.space.spaceNeighbourhoodRadius;
                     for (let t = 1; t < this.spacetime.length; t++) {
                         const space = this.spacetime[t];
                         for (let x = nr; x < space.length - nr; x++) {
@@ -191,9 +226,66 @@ System.register("Weapon", [], function (exports_5, context_5) {
         }
     };
 });
-System.register("PlayerShip", ["Projectile", "Weaponary"], function (exports_6, context_6) {
-    var Projectile_1, Weaponary_1, PlayerShip;
+System.register("Weaponary", ["Weapon", "utils/LehmerPrng"], function (exports_6, context_6) {
+    var Weapon_1, LehmerPrng_1, Weaponary;
     var __moduleName = context_6 && context_6.id;
+    return {
+        setters: [
+            function (Weapon_1_1) {
+                Weapon_1 = Weapon_1_1;
+            },
+            function (LehmerPrng_1_1) {
+                LehmerPrng_1 = LehmerPrng_1_1;
+            }
+        ],
+        execute: function () {
+            Weaponary = class Weaponary {
+                constructor(rule) {
+                    this.rule = rule;
+                    this.random = new LehmerPrng_1.LehmerPrng(Math.floor(Date.now()));
+                    this.weapons = this.loadOrGenerate();
+                }
+                generateRandomWeapon() {
+                    const getRandomState = () => {
+                        return this.random.next() % this.rule.space.stateCount;
+                    };
+                    const size = 45;
+                    return new Weapon_1.Weapon(this.rule, Array.from({ length: size }, getRandomState));
+                }
+                save() {
+                    localStorage.setItem(`${this.rule.desc}_weaponary`, JSON.stringify(this.weapons.map(w => w.isBookmarked ? w.space : undefined)));
+                }
+                loadOrGenerate() {
+                    const itemJson = localStorage.getItem(`${this.rule.desc}_weaponary`);
+                    const weapons = Array.from({ length: 8 });
+                    if (itemJson) {
+                        const item = JSON.parse(itemJson);
+                        for (let i = 0; i < weapons.length; i++) {
+                            const itemi = item[i];
+                            if (itemi) {
+                                weapons[i] = new Weapon_1.Weapon(this.rule, itemi);
+                                weapons[i].isBookmarked = true;
+                            }
+                            else {
+                                weapons[i] = this.generateRandomWeapon();
+                            }
+                        }
+                    }
+                    else {
+                        for (let i = 0; i < weapons.length; i++) {
+                            weapons[i] = this.generateRandomWeapon();
+                        }
+                    }
+                    return weapons;
+                }
+            };
+            exports_6("Weaponary", Weaponary);
+        }
+    };
+});
+System.register("PlayerShip", ["Projectile", "Weaponary"], function (exports_7, context_7) {
+    var Projectile_1, Weaponary_1, PlayerShip;
+    var __moduleName = context_7 && context_7.id;
     return {
         setters: [
             function (Projectile_1_1) {
@@ -284,13 +376,13 @@ System.register("PlayerShip", ["Projectile", "Weaponary"], function (exports_6, 
                     }
                 }
             };
-            exports_6("PlayerShip", PlayerShip);
+            exports_7("PlayerShip", PlayerShip);
         }
     };
 });
-System.register("Projectile", [], function (exports_7, context_7) {
+System.register("Projectile", [], function (exports_8, context_8) {
     var Projectile;
-    var __moduleName = context_7 && context_7.id;
+    var __moduleName = context_8 && context_8.id;
     return {
         setters: [],
         execute: function () {
@@ -309,7 +401,7 @@ System.register("Projectile", [], function (exports_7, context_7) {
                 }
                 ;
                 updateSpace(t) {
-                    const nr = this.rule.spaceNeighbourhoodRadius;
+                    const nr = this.rule.space.spaceNeighbourhoodRadius;
                     const prevSpace = this.spacetime.getSpaceAtTime(t - 1);
                     const tSpace = this.spacetime.getSpaceAtTime(t);
                     let owned = 0;
@@ -377,13 +469,13 @@ System.register("Projectile", [], function (exports_7, context_7) {
                     this.timePosition += this.timeVelocity;
                 }
             };
-            exports_7("Projectile", Projectile);
+            exports_8("Projectile", Projectile);
         }
     };
 });
-System.register("Spacetime", [], function (exports_8, context_8) {
+System.register("Spacetime", [], function (exports_9, context_9) {
     var Spacetime;
-    var __moduleName = context_8 && context_8.id;
+    var __moduleName = context_9 && context_9.id;
     return {
         setters: [],
         execute: function () {
@@ -406,13 +498,13 @@ System.register("Spacetime", [], function (exports_8, context_8) {
                     return this.data[t % this.timeSize];
                 }
             };
-            exports_8("Spacetime", Spacetime);
+            exports_9("Spacetime", Spacetime);
         }
     };
 });
-System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "PlayerShip", "Rule"], function (exports_9, context_9) {
-    var LehmerPrng_2, misc_1, Spacetime_1, PlayerShip_1, Rule_1, Universe;
-    var __moduleName = context_9 && context_9.id;
+System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "PlayerShip", "RuleSpace"], function (exports_10, context_10) {
+    var LehmerPrng_2, misc_1, Spacetime_1, PlayerShip_1, RuleSpace_1, urlSearchParams, code, Universe;
+    var __moduleName = context_10 && context_10.id;
     return {
         setters: [
             function (LehmerPrng_2_1) {
@@ -427,15 +519,20 @@ System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "Pla
             function (PlayerShip_1_1) {
                 PlayerShip_1 = PlayerShip_1_1;
             },
-            function (Rule_1_1) {
-                Rule_1 = Rule_1_1;
+            function (RuleSpace_1_1) {
+                RuleSpace_1 = RuleSpace_1_1;
             }
         ],
         execute: function () {
+            urlSearchParams = new URLSearchParams(window.location.search);
+            code = urlSearchParams.has("code")
+                ? Number.parseInt(urlSearchParams.get("code"))
+                : 1815; //todo
             Universe = class Universe {
                 constructor() {
                     this.random = new LehmerPrng_2.LehmerPrng(4242);
-                    this.rule = new Rule_1.Rule();
+                    this.ruleSpace = new RuleSpace_1.RuleSpace();
+                    this.rule = this.ruleSpace.generateRule(code);
                     this.spacetime = new Spacetime_1.Spacetime();
                     this.player = misc_1.tap(new PlayerShip_1.PlayerShip(this), ps => {
                         ps.topX = Math.round((this.spacetime.spaceSize - ps.size) / 2);
@@ -450,10 +547,10 @@ System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "Pla
                     // }
                 }
                 getRandomState() {
-                    return this.random.next() % this.rule.stateCount;
+                    return this.random.next() % this.rule.space.stateCount;
                 }
                 fillMostRecentSpace() {
-                    const nr = this.rule.spaceNeighbourhoodRadius;
+                    const nr = this.rule.space.spaceNeighbourhoodRadius;
                     const t = this.spacetime.timeSize - 1 + this.spacetime.timeOffset;
                     const tSpace = this.spacetime.getSpaceAtTime(t);
                     for (let x = 0; x < nr; x++) {
@@ -483,13 +580,13 @@ System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "Pla
                     }
                 }
             };
-            exports_9("Universe", Universe);
+            exports_10("Universe", Universe);
         }
     };
 });
-System.register("utils/ImageDataUint32", [], function (exports_10, context_10) {
+System.register("utils/ImageDataUint32", [], function (exports_11, context_11) {
     var ImageDataUint32;
-    var __moduleName = context_10 && context_10.id;
+    var __moduleName = context_11 && context_11.id;
     return {
         setters: [],
         execute: function () {
@@ -502,13 +599,13 @@ System.register("utils/ImageDataUint32", [], function (exports_10, context_10) {
                     this.dataUint32[y * this.width + x] = abgr;
                 }
             };
-            exports_10("ImageDataUint32", ImageDataUint32);
+            exports_11("ImageDataUint32", ImageDataUint32);
         }
     };
 });
-System.register("UniverseView", ["utils/misc", "utils/ImageDataUint32"], function (exports_11, context_11) {
+System.register("UniverseView", ["utils/misc", "utils/ImageDataUint32"], function (exports_12, context_12) {
     var misc_2, ImageDataUint32_1, UniverseView;
-    var __moduleName = context_11 && context_11.id;
+    var __moduleName = context_12 && context_12.id;
     return {
         setters: [
             function (misc_2_1) {
@@ -567,13 +664,13 @@ System.register("UniverseView", ["utils/misc", "utils/ImageDataUint32"], functio
                     this.ctx.putImageData(this.imageData, 0, 0);
                 }
             };
-            exports_11("UniverseView", UniverseView);
+            exports_12("UniverseView", UniverseView);
         }
     };
 });
-System.register("WeaponView", ["utils/misc", "utils/ImageDataUint32"], function (exports_12, context_12) {
+System.register("WeaponView", ["utils/misc", "utils/ImageDataUint32"], function (exports_13, context_13) {
     var misc_3, ImageDataUint32_2, WeaponView;
-    var __moduleName = context_12 && context_12.id;
+    var __moduleName = context_13 && context_13.id;
     return {
         setters: [
             function (misc_3_1) {
@@ -615,13 +712,13 @@ System.register("WeaponView", ["utils/misc", "utils/ImageDataUint32"], function 
                     this.ctx.putImageData(this.imageData, 0, 0);
                 }
             };
-            exports_12("WeaponView", WeaponView);
+            exports_13("WeaponView", WeaponView);
         }
     };
 });
-System.register("WeaponaryView", ["WeaponView"], function (exports_13, context_13) {
+System.register("WeaponaryView", ["WeaponView"], function (exports_14, context_14) {
     var WeaponView_1, WeaponaryView;
-    var __moduleName = context_13 && context_13.id;
+    var __moduleName = context_14 && context_14.id;
     return {
         setters: [
             function (WeaponView_1_1) {
@@ -640,13 +737,13 @@ System.register("WeaponaryView", ["WeaponView"], function (exports_13, context_1
                     });
                 }
             };
-            exports_13("WeaponaryView", WeaponaryView);
+            exports_14("WeaponaryView", WeaponaryView);
         }
     };
 });
-System.register("FpsMeter", [], function (exports_14, context_14) {
+System.register("FpsMeter", [], function (exports_15, context_15) {
     var FpsMeter;
-    var __moduleName = context_14 && context_14.id;
+    var __moduleName = context_15 && context_15.id;
     return {
         setters: [],
         execute: function () {
@@ -672,13 +769,13 @@ System.register("FpsMeter", [], function (exports_14, context_14) {
                     this.lastUpdate = time;
                 }
             };
-            exports_14("FpsMeter", FpsMeter);
+            exports_15("FpsMeter", FpsMeter);
         }
     };
 });
-System.register("Application", ["Universe", "UniverseView", "WeaponaryView", "game-inputs", "FpsMeter", "utils/misc"], function (exports_15, context_15) {
+System.register("Application", ["Universe", "UniverseView", "WeaponaryView", "game-inputs", "FpsMeter", "utils/misc"], function (exports_16, context_16) {
     var Universe_1, UniverseView_1, WeaponaryView_1, game_inputs_1, FpsMeter_1, misc_4, Application;
-    var __moduleName = context_15 && context_15.id;
+    var __moduleName = context_16 && context_16.id;
     return {
         setters: [
             function (Universe_1_1) {
@@ -831,13 +928,13 @@ System.register("Application", ["Universe", "UniverseView", "WeaponaryView", "ga
                     requestAnimationFrame(requestAnimationFrameCallback);
                 }
             };
-            exports_15("Application", Application);
+            exports_16("Application", Application);
         }
     };
 });
-System.register("main", ["Application"], function (exports_16, context_16) {
+System.register("main", ["Application"], function (exports_17, context_17) {
     var Application_1, app;
-    var __moduleName = context_16 && context_16.id;
+    var __moduleName = context_17 && context_17.id;
     return {
         setters: [
             function (Application_1_1) {

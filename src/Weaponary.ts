@@ -7,7 +7,7 @@ export class Weaponary {
 
     generateRandomWeapon() {
         const getRandomState = () => {
-            return this.random.next() % this.rule.stateCount;
+            return this.random.next() % this.rule.space.stateCount;
         }
         const size = 45;
 
@@ -19,15 +19,15 @@ export class Weaponary {
 
     save() {
         localStorage.setItem(
-            `${this.rule.id}_weaponary`, 
+            `${this.rule.desc}_weaponary`, 
             JSON.stringify(
                 this.weapons.map(w => w.isBookmarked ? w.space : undefined)));
     }
 
     loadOrGenerate() {
-        const itemJson = localStorage.getItem(`${this.rule.id}_weaponary`);
+        const itemJson = localStorage.getItem(`${this.rule.desc}_weaponary`);
         const weapons: Weapon[] = Array.from({length: 8});
-        if (itemJson !== null) {
+        if (itemJson) {
             const item = JSON.parse(itemJson) as Array<number[] | undefined>;
             for (let i = 0; i < weapons.length; i++) {
                 const itemi = item[i];
@@ -37,6 +37,10 @@ export class Weaponary {
                 } else {
                     weapons[i] = this.generateRandomWeapon();
                 }
+            }
+        } else {
+            for (let i = 0; i < weapons.length; i++) {
+                weapons[i] = this.generateRandomWeapon();
             }
         }
         return weapons;
