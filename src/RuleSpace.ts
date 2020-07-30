@@ -8,21 +8,15 @@ export class RuleSpace {
 
     readonly nsmap = {
         a: [
-            [0, 1, 2],
-            [1, 3, 4],
-            [2, 4, 5],
+            [0, 1, 3],
+            [1, 2, 4],
+            [3, 4, 5],
         ],
         f(n1: number, n2: number) {
-            if (n1 !== 0) {
-                if (n2 !== 0) {
-                    return n2 + n1 + 1;
-                }
-                return n1;
-            }
-            return n2;
+            return this.a[n1][n2];
         },
-        n1s: [0, 0, 0, 1, 1, 2],
-        n2s: [0, 1, 2, 1, 2, 2],
+        n1s: [0, 0, 1, 0, 1, 2],
+        n2s: [0, 1, 1, 2, 2, 2],
     };
 
 
