@@ -3,7 +3,7 @@
         "outFile": "./public/app.js",
         "module": "system",
         "moduleResolution": "node",
-        "target": "es2017",
+        "target": "esnext",
         
         "watch": true,
         "sourceMap": true,

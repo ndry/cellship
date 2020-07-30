@@ -1,0 +1,8 @@
+{
+    "workbench.colorCustomizations": {
+        "[Default Dark+]": {
+            "statusBar.background": "#006000",
+            "titleBar.activeBackground": "#006000"
+        }
+    }
+}

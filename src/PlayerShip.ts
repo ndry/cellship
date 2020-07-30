@@ -58,20 +58,25 @@ export class PlayerShip {
         projectile.timeCreated = t;
         projectile.timePosition = t + 1;
         this.universe.projectiles.push(projectile);
-        const tSpace = this.spacetime.getSpaceAtTime(t);
+        const space = this.spacetime.getSpaceAtTime(t);
+        const prevSpace = this.spacetime.getSpaceAtTime(t - 1);
         for (
             let x = this.topX; 
             x <= this.bottomX; 
             x++
         ) {
-            const cell = tSpace[x];
+            const cell = space[x];
+            const prevCell = prevSpace[x];
             
             const cardX = x - (this.topX + (this.size - 1) / 2 + 1) + (weapon.size - 1) / 2 + 1;
             // if (cell.value !== card.cardSpace[cardX] ?? 0) {
                 cell.stepUpated = this.spacetime.timeOffset;
+                prevCell.stepUpated = this.spacetime.timeOffset;
             // }
             cell.value = weapon.space[cardX] ?? 0;
+            prevCell.value = weapon.prevSpace[cardX] ?? 0;
             cell.projectile = projectile;
+            prevCell.projectile = projectile;
         }
     }
 

@@ -19,8 +19,9 @@ export class Projectile {
     };
 
     updateSpace(t: number) {
-        const nr = this.rule.space.spaceNeighbourhoodRadius;
+        const nr = this.rule.spaceNeighbourhoodRadius;
         const prevSpace = this.spacetime.getSpaceAtTime(t - 1);
+        const prevPrevSpace = this.spacetime.getSpaceAtTime(t - 2);
         const tSpace = this.spacetime.getSpaceAtTime(t);
         
         let owned = 0;
@@ -34,12 +35,15 @@ export class Projectile {
             prevCell1 = prevCell2;
             prevCell2 = prevCell3;
             prevCell3 = prevSpace[x + 1];
+            const prevPrevCell = prevPrevSpace[x];
             if (prevCell1.stepUpated !== timeOffset
                 && prevCell1.stepUpated !== prevTimeOffset
                 && prevCell2.stepUpated !== timeOffset
                 && prevCell2.stepUpated !== prevTimeOffset
                 && prevCell3.stepUpated !== timeOffset
                 && prevCell3.stepUpated !== prevTimeOffset
+                && prevPrevCell.stepUpated !== timeOffset
+                && prevPrevCell.stepUpated !== prevTimeOffset
             ) {
                 continue;
             }
@@ -48,7 +52,8 @@ export class Projectile {
             const value = this.rule.getState3(
                 this.getValue(prevCell1),
                 this.getValue(prevCell2),
-                this.getValue(prevCell3));
+                this.getValue(prevCell3),
+                this.getValue(prevPrevCell));
 
             if (value === 0 
                 && cell.value !== 0 

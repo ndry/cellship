@@ -46,158 +46,136 @@ System.register("utils/misc", [], function (exports_2, context_2) {
         return x;
     }
     exports_2("tap", tap);
+    function getDigitsFromNumber(n, base, digits) {
+        const basen = BigInt(base);
+        for (let x = digits.length - 1; x >= 0; x--) {
+            digits[x] = Number(n % basen);
+            n = n / basen;
+        }
+        return digits;
+    }
+    exports_2("getDigitsFromNumber", getDigitsFromNumber);
+    function getNumberFromDigits(digits, base) {
+        const basen = BigInt(base);
+        let n = 0n;
+        for (let x = 0; x < digits.length; x++) {
+            n *= basen;
+            n += BigInt(digits[x]);
+        }
+        return n;
+    }
+    exports_2("getNumberFromDigits", getNumberFromDigits);
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("RuleSpace", ["Rule"], function (exports_3, context_3) {
-    var Rule_1, RuleSpace;
+System.register("Rule", ["utils/misc"], function (exports_3, context_3) {
+    var misc_js_1, Rule;
     var __moduleName = context_3 && context_3.id;
     return {
         setters: [
-            function (Rule_1_1) {
-                Rule_1 = Rule_1_1;
+            function (misc_js_1_1) {
+                misc_js_1 = misc_js_1_1;
             }
         ],
         execute: function () {
-            RuleSpace = class RuleSpace {
-                constructor() {
-                    this.id = "3st_1nr_sym_v0";
-                    this.stateCount = 3;
-                    this.spaceNeighbourhoodRadius = 1;
-                    this.sizePower = 6 * this.stateCount;
-                    this.size = Math.pow(this.stateCount, this.sizePower);
-                    this.nsmap = {
-                        a: [
-                            [0, 1, 3],
-                            [1, 2, 4],
-                            [3, 4, 5],
-                        ],
-                        f(n1, n2) {
-                            return this.a[n1][n2];
-                        },
-                        n1s: [0, 0, 1, 0, 1, 2],
-                        n2s: [0, 1, 1, 2, 2, 2],
-                    };
-                    this.groupCombinations = [
-                        [0, 1, 2],
-                        [0, 2, 1],
-                        [1, 0, 2],
-                        [1, 2, 0],
-                        [2, 0, 1],
-                        [2, 1, 0],
-                    ];
-                    this.isMainEntryInCombinationGroup_t = Array.from({ length: this.sizePower });
-                    this.isMainEntryInCombinationGroup_tc = Array.from({ length: this.sizePower });
-                }
-                isMainEntryInCombinationGroup(code) {
-                    const t = this.isMainEntryInCombinationGroup_t;
-                    const tc = this.isMainEntryInCombinationGroup_tc;
-                    const combinations = this.groupCombinations;
-                    const n1s = this.nsmap.n1s;
-                    const n2s = this.nsmap.n2s;
-                    const nsmapa = this.nsmap.a;
-                    const stateCount = this.stateCount;
-                    const generateRuleTableFromCode = this.generateRuleTableFromCode;
-                    const generateCodeFromRuleTable = this.generateCodeFromRuleTable;
-                    generateRuleTableFromCode(code, t);
-                    for (let ci = 0; ci < combinations.length; ci++) {
-                        const combination = combinations[ci];
-                        for (let n = 0; n < n1s.length; n++) {
-                            const n1c = combination[n1s[n]];
-                            const n2c = combination[n2s[n]];
-                            const nc = nsmapa[n1c][n2c];
-                            for (let c = 0; c < stateCount; c++) {
-                                const cc = combination[c];
-                                const state = n * stateCount + c;
-                                const statec = nc * stateCount + cc;
-                                tc[statec] = combination[t[state]];
-                            }
+            Rule = /** @class */ (() => {
+                class Rule {
+                    constructor(stateCount, tableOrCode) {
+                        this.stateCount = stateCount;
+                        this.tableOrCode = tableOrCode;
+                        this.spaceNeighbourhoodRadius = Rule.spaceNeighbourhoodRadius;
+                        this.timeNeighbourhoodRadius = Rule.timeNeighbourhoodRadius;
+                        if (Array.isArray(tableOrCode)) {
+                            this.table = tableOrCode;
+                            this.code = misc_js_1.getNumberFromDigits(this.table, stateCount);
                         }
-                        let combinationCode = generateCodeFromRuleTable(tc);
-                        if (combinationCode < code) {
-                            return false;
+                        else {
+                            this.code = tableOrCode;
+                            this.table = misc_js_1.getDigitsFromNumber(this.code, this.stateCount, Array.from({ length: Math.pow(this.stateCount, 4) }));
+                        }
+                        this.tableDesc = this.table.join("");
+                    }
+                    static getRuleSpaceSizePower(stateCount) {
+                        return stateCount ** 4;
+                    }
+                    static getRuleSpaceSize(stateCount) {
+                        return stateCount ** (stateCount ** 4);
+                    }
+                    fillSpace3(space, prevSpace, prevPrevSpace) {
+                        const nr = this.spaceNeighbourhoodRadius;
+                        const table = this.table;
+                        const stateCount = this.stateCount;
+                        const ss = space.length;
+                        let n1 = 0;
+                        let c = prevSpace[nr - 1];
+                        let n2 = prevSpace[nr];
+                        for (let x = nr; x < ss - nr; x++) {
+                            n1 = c;
+                            c = n2;
+                            n2 = prevSpace[x + 1];
+                            const pc = prevPrevSpace[x];
+                            let combinedState = 0;
+                            combinedState = combinedState * stateCount + n1;
+                            combinedState = combinedState * stateCount + c;
+                            combinedState = combinedState * stateCount + n2;
+                            combinedState = combinedState * stateCount + pc;
+                            space[x] = table[combinedState];
+                            // console.assert(table[combinedState] !== undefined);
                         }
                     }
-                    return true;
-                }
-                generateRuleTableFromCode(code, table = Array.from({ length: this.sizePower })) {
-                    for (let x = table.length - 1; x >= 0; x--) {
-                        code = (code - (table[x] = code % 3)) / 3;
+                    fillSpace2(spacetime, t) {
+                        const space = spacetime[t];
+                        this.fillSpace3(space, spacetime[t - 1], spacetime[t - 2]);
+                        return space;
                     }
-                    return table;
-                }
-                generateCodeFromRuleTable(table) {
-                    let code = 0;
-                    for (let x = 0; x < table.length; x++) {
-                        code *= 3;
-                        code += table[x];
+                    getState3(n1, c, n2, pc) {
+                        let combinedState = 0;
+                        combinedState = combinedState * this.stateCount + n1;
+                        combinedState = combinedState * this.stateCount + c;
+                        combinedState = combinedState * this.stateCount + n2;
+                        combinedState = combinedState * this.stateCount + pc;
+                        return this.table[combinedState];
                     }
-                    return code;
+                    getState2(getValue, t, x) {
+                        return this.getState3(getValue(t - 1, x - 1), getValue(t - 1, x), getValue(t - 1, x + 1), getValue(t - 2, x));
+                    }
+                    getState1(spacetime, t, x) {
+                        return this.getState3(spacetime[t - 1][x - 1], spacetime[t - 1][x], spacetime[t - 1][x + 1], spacetime[t - 2][x]);
+                    }
                 }
-                generateRule(code) {
-                    return new Rule_1.Rule(this, code);
-                }
-                getPrestate(cell_m1_m1, cell_m1_z0, cell_m1_p1) {
-                    const n = this.nsmap.f(cell_m1_m1, cell_m1_p1);
-                    let state = n * this.stateCount + cell_m1_z0;
-                    return state;
-                }
-            };
-            exports_3("RuleSpace", RuleSpace);
+                Rule.spaceNeighbourhoodRadius = 1;
+                Rule.timeNeighbourhoodRadius = 2;
+                return Rule;
+            })();
+            exports_3("Rule", Rule);
         }
     };
 });
-System.register("Rule", [], function (exports_4, context_4) {
-    var Rule;
+System.register("Weapon", [], function (exports_4, context_4) {
+    var Weapon;
     var __moduleName = context_4 && context_4.id;
     return {
         setters: [],
         execute: function () {
-            Rule = class Rule {
-                constructor(space, code) {
-                    this.space = space;
-                    this.code = code;
-                    this.table = this.space.generateRuleTableFromCode(this.code);
-                    this.tableString = this.table.join("");
-                    this.desc = `${this.space.id}_${this.code}_${this.tableString}`;
-                }
-                getState3(cell_m1_m1, cell_m1_z0, cell_m1_p1) {
-                    return this.table[this.space.getPrestate(cell_m1_m1, cell_m1_z0, cell_m1_p1)];
-                }
-                getState1(spacetime, t, x) {
-                    return this.getState3(spacetime[t - 1][x - 1], spacetime[t - 1][x], spacetime[t - 1][x + 1]);
-                }
-                getState2(getValue, t, x) {
-                    return this.getState3(getValue(t - 1, x - 1), getValue(t - 1, x), getValue(t - 1, x + 1));
-                }
-            };
-            exports_4("Rule", Rule);
-        }
-    };
-});
-System.register("Weapon", [], function (exports_5, context_5) {
-    var Weapon;
-    var __moduleName = context_5 && context_5.id;
-    return {
-        setters: [],
-        execute: function () {
             Weapon = class Weapon {
-                constructor(rule, space) {
+                constructor(rule, space, prevSpace) {
                     this.rule = rule;
                     this.space = space;
+                    this.prevSpace = prevSpace;
                     this.isBookmarked = false;
                     const spaceSize = this.size * 10 + 1;
                     const timeSize = spaceSize;
                     this.spacetime = Array.from({ length: timeSize }, () => new Uint8Array(spaceSize));
                     const xMargin = (this.spacetime[0].length - this.space.length) / 2;
                     for (let x = 0; x < this.space.length; x++) {
-                        this.spacetime[0][x + xMargin] = this.space[x];
+                        this.spacetime[0][x + xMargin] = this.prevSpace[x];
+                        this.spacetime[1][x + xMargin] = this.space[x];
                     }
-                    const nr = rule.space.spaceNeighbourhoodRadius;
-                    for (let t = 1; t < this.spacetime.length; t++) {
+                    const nr = rule.spaceNeighbourhoodRadius;
+                    for (let t = 2; t < this.spacetime.length; t++) {
                         const space = this.spacetime[t];
                         for (let x = nr; x < space.length - nr; x++) {
                             space[x] = rule.getState1(this.spacetime, t, x);
@@ -212,17 +190,26 @@ System.register("Weapon", [], function (exports_5, context_5) {
                         this.spacetime[t] = space;
                     }
                 }
+                serialize() {
+                    return {
+                        space: this.space,
+                        prevSpace: this.prevSpace,
+                    };
+                }
+                static deserialize(data) {
+                    return (rule) => new Weapon(rule, data.space, data.prevSpace);
+                }
                 get size() { return this.space.length; }
                 get spaceSize() { return this.spacetime[0].length; }
                 get timeSize() { return this.spacetime.length; }
             };
-            exports_5("Weapon", Weapon);
+            exports_4("Weapon", Weapon);
         }
     };
 });
-System.register("Weaponary", ["Weapon", "utils/LehmerPrng"], function (exports_6, context_6) {
+System.register("Weaponary", ["Weapon", "utils/LehmerPrng"], function (exports_5, context_5) {
     var Weapon_1, LehmerPrng_1, Weaponary;
-    var __moduleName = context_6 && context_6.id;
+    var __moduleName = context_5 && context_5.id;
     return {
         setters: [
             function (Weapon_1_1) {
@@ -241,23 +228,23 @@ System.register("Weaponary", ["Weapon", "utils/LehmerPrng"], function (exports_6
                 }
                 generateRandomWeapon() {
                     const getRandomState = () => {
-                        return this.random.next() % this.rule.space.stateCount;
+                        return this.random.next() % this.rule.stateCount;
                     };
                     const size = 45;
-                    return new Weapon_1.Weapon(this.rule, Array.from({ length: size }, getRandomState));
+                    return new Weapon_1.Weapon(this.rule, Array.from({ length: size }, getRandomState), Array.from({ length: size }, getRandomState));
                 }
                 save() {
-                    localStorage.setItem(`${this.rule.desc}_weaponary`, JSON.stringify(this.weapons.map(w => w.isBookmarked ? w.space : undefined)));
+                    localStorage.setItem(`${this.rule.code}_weaponary`, JSON.stringify(this.weapons.map(w => w.isBookmarked ? w.serialize() : undefined)));
                 }
                 loadOrGenerate() {
-                    const itemJson = localStorage.getItem(`${this.rule.desc}_weaponary`);
+                    const itemJson = localStorage.getItem(`${this.rule.code}_weaponary`);
                     const weapons = Array.from({ length: 8 });
                     if (itemJson) {
                         const item = JSON.parse(itemJson);
                         for (let i = 0; i < weapons.length; i++) {
                             const itemi = item[i];
                             if (itemi) {
-                                weapons[i] = new Weapon_1.Weapon(this.rule, itemi);
+                                weapons[i] = Weapon_1.Weapon.deserialize(itemi)(this.rule);
                                 weapons[i].isBookmarked = true;
                             }
                             else {
@@ -273,13 +260,13 @@ System.register("Weaponary", ["Weapon", "utils/LehmerPrng"], function (exports_6
                     return weapons;
                 }
             };
-            exports_6("Weaponary", Weaponary);
+            exports_5("Weaponary", Weaponary);
         }
     };
 });
-System.register("PlayerShip", ["Projectile", "Weaponary"], function (exports_7, context_7) {
+System.register("PlayerShip", ["Projectile", "Weaponary"], function (exports_6, context_6) {
     var Projectile_1, Weaponary_1, PlayerShip;
-    var __moduleName = context_7 && context_7.id;
+    var __moduleName = context_6 && context_6.id;
     return {
         setters: [
             function (Projectile_1_1) {
@@ -325,22 +312,26 @@ System.register("PlayerShip", ["Projectile", "Weaponary"], function (exports_7, 
                     return this.spacetime.timeOffset - this.lastSizeChangeStep;
                 }
                 fire(weapon) {
-                    var _a;
                     const t = this.spacetime.timeOffset + this.time;
                     const projectile = new Projectile_1.Projectile();
                     projectile.owner = this;
                     projectile.timeCreated = t;
                     projectile.timePosition = t + 1;
                     this.universe.projectiles.push(projectile);
-                    const tSpace = this.spacetime.getSpaceAtTime(t);
+                    const space = this.spacetime.getSpaceAtTime(t);
+                    const prevSpace = this.spacetime.getSpaceAtTime(t - 1);
                     for (let x = this.topX; x <= this.bottomX; x++) {
-                        const cell = tSpace[x];
+                        const cell = space[x];
+                        const prevCell = prevSpace[x];
                         const cardX = x - (this.topX + (this.size - 1) / 2 + 1) + (weapon.size - 1) / 2 + 1;
                         // if (cell.value !== card.cardSpace[cardX] ?? 0) {
                         cell.stepUpated = this.spacetime.timeOffset;
+                        prevCell.stepUpated = this.spacetime.timeOffset;
                         // }
-                        cell.value = (_a = weapon.space[cardX]) !== null && _a !== void 0 ? _a : 0;
+                        cell.value = weapon.space[cardX] ?? 0;
+                        prevCell.value = weapon.prevSpace[cardX] ?? 0;
                         cell.projectile = projectile;
+                        prevCell.projectile = projectile;
                     }
                 }
                 update() {
@@ -370,13 +361,13 @@ System.register("PlayerShip", ["Projectile", "Weaponary"], function (exports_7, 
                     }
                 }
             };
-            exports_7("PlayerShip", PlayerShip);
+            exports_6("PlayerShip", PlayerShip);
         }
     };
 });
-System.register("Projectile", [], function (exports_8, context_8) {
+System.register("Projectile", [], function (exports_7, context_7) {
     var Projectile;
-    var __moduleName = context_8 && context_8.id;
+    var __moduleName = context_7 && context_7.id;
     return {
         setters: [],
         execute: function () {
@@ -395,8 +386,9 @@ System.register("Projectile", [], function (exports_8, context_8) {
                 }
                 ;
                 updateSpace(t) {
-                    const nr = this.rule.space.spaceNeighbourhoodRadius;
+                    const nr = this.rule.spaceNeighbourhoodRadius;
                     const prevSpace = this.spacetime.getSpaceAtTime(t - 1);
+                    const prevPrevSpace = this.spacetime.getSpaceAtTime(t - 2);
                     const tSpace = this.spacetime.getSpaceAtTime(t);
                     let owned = 0;
                     const lnr = tSpace.length - nr;
@@ -409,16 +401,19 @@ System.register("Projectile", [], function (exports_8, context_8) {
                         prevCell1 = prevCell2;
                         prevCell2 = prevCell3;
                         prevCell3 = prevSpace[x + 1];
+                        const prevPrevCell = prevPrevSpace[x];
                         if (prevCell1.stepUpated !== timeOffset
                             && prevCell1.stepUpated !== prevTimeOffset
                             && prevCell2.stepUpated !== timeOffset
                             && prevCell2.stepUpated !== prevTimeOffset
                             && prevCell3.stepUpated !== timeOffset
-                            && prevCell3.stepUpated !== prevTimeOffset) {
+                            && prevCell3.stepUpated !== prevTimeOffset
+                            && prevPrevCell.stepUpated !== timeOffset
+                            && prevPrevCell.stepUpated !== prevTimeOffset) {
                             continue;
                         }
                         const cell = tSpace[x];
-                        const value = this.rule.getState3(this.getValue(prevCell1), this.getValue(prevCell2), this.getValue(prevCell3));
+                        const value = this.rule.getState3(this.getValue(prevCell1), this.getValue(prevCell2), this.getValue(prevCell3), this.getValue(prevPrevCell));
                         if (value === 0
                             && cell.value !== 0
                             && cell.projectile
@@ -463,13 +458,13 @@ System.register("Projectile", [], function (exports_8, context_8) {
                     this.timePosition += this.timeVelocity;
                 }
             };
-            exports_8("Projectile", Projectile);
+            exports_7("Projectile", Projectile);
         }
     };
 });
-System.register("Spacetime", [], function (exports_9, context_9) {
+System.register("Spacetime", [], function (exports_8, context_8) {
     var Spacetime;
-    var __moduleName = context_9 && context_9.id;
+    var __moduleName = context_8 && context_8.id;
     return {
         setters: [],
         execute: function () {
@@ -492,13 +487,13 @@ System.register("Spacetime", [], function (exports_9, context_9) {
                     return this.data[t % this.timeSize];
                 }
             };
-            exports_9("Spacetime", Spacetime);
+            exports_8("Spacetime", Spacetime);
         }
     };
 });
-System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "PlayerShip", "RuleSpace"], function (exports_10, context_10) {
-    var LehmerPrng_2, misc_1, Spacetime_1, PlayerShip_1, RuleSpace_1, urlSearchParams, code, Universe;
-    var __moduleName = context_10 && context_10.id;
+System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "PlayerShip", "Rule"], function (exports_9, context_9) {
+    var LehmerPrng_2, misc_1, Spacetime_1, PlayerShip_1, Rule_1, urlSearchParams, code, Universe;
+    var __moduleName = context_9 && context_9.id;
     return {
         setters: [
             function (LehmerPrng_2_1) {
@@ -513,20 +508,19 @@ System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "Pla
             function (PlayerShip_1_1) {
                 PlayerShip_1 = PlayerShip_1_1;
             },
-            function (RuleSpace_1_1) {
-                RuleSpace_1 = RuleSpace_1_1;
+            function (Rule_1_1) {
+                Rule_1 = Rule_1_1;
             }
         ],
         execute: function () {
             urlSearchParams = new URLSearchParams(window.location.search);
             code = urlSearchParams.has("code")
-                ? Number.parseInt(urlSearchParams.get("code"))
-                : 1815; //todo
+                ? BigInt(urlSearchParams.get("code"))
+                : 0n; //todo
             Universe = class Universe {
                 constructor() {
                     this.random = new LehmerPrng_2.LehmerPrng(4242);
-                    this.ruleSpace = new RuleSpace_1.RuleSpace();
-                    this.rule = this.ruleSpace.generateRule(code);
+                    this.rule = new Rule_1.Rule(3, code);
                     this.spacetime = new Spacetime_1.Spacetime();
                     this.player = misc_1.tap(new PlayerShip_1.PlayerShip(this), ps => {
                         ps.topX = Math.round((this.spacetime.spaceSize - ps.size) / 2);
@@ -541,10 +535,10 @@ System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "Pla
                     // }
                 }
                 getRandomState() {
-                    return this.random.next() % this.rule.space.stateCount;
+                    return this.random.next() % this.rule.stateCount;
                 }
                 fillMostRecentSpace() {
-                    const nr = this.rule.space.spaceNeighbourhoodRadius;
+                    const nr = this.rule.spaceNeighbourhoodRadius;
                     const t = this.spacetime.timeSize - 1 + this.spacetime.timeOffset;
                     const tSpace = this.spacetime.getSpaceAtTime(t);
                     for (let x = 0; x < nr; x++) {
@@ -574,13 +568,13 @@ System.register("Universe", ["utils/LehmerPrng", "utils/misc", "Spacetime", "Pla
                     }
                 }
             };
-            exports_10("Universe", Universe);
+            exports_9("Universe", Universe);
         }
     };
 });
-System.register("utils/ImageDataUint32", [], function (exports_11, context_11) {
+System.register("utils/ImageDataUint32", [], function (exports_10, context_10) {
     var ImageDataUint32;
-    var __moduleName = context_11 && context_11.id;
+    var __moduleName = context_10 && context_10.id;
     return {
         setters: [],
         execute: function () {
@@ -593,13 +587,13 @@ System.register("utils/ImageDataUint32", [], function (exports_11, context_11) {
                     this.dataUint32[y * this.width + x] = abgr;
                 }
             };
-            exports_11("ImageDataUint32", ImageDataUint32);
+            exports_10("ImageDataUint32", ImageDataUint32);
         }
     };
 });
-System.register("UniverseView", ["utils/misc", "utils/ImageDataUint32"], function (exports_12, context_12) {
+System.register("UniverseView", ["utils/misc", "utils/ImageDataUint32"], function (exports_11, context_11) {
     var misc_2, ImageDataUint32_1, UniverseView;
-    var __moduleName = context_12 && context_12.id;
+    var __moduleName = context_11 && context_11.id;
     return {
         setters: [
             function (misc_2_1) {
@@ -658,13 +652,13 @@ System.register("UniverseView", ["utils/misc", "utils/ImageDataUint32"], functio
                     this.ctx.putImageData(this.imageData, 0, 0);
                 }
             };
-            exports_12("UniverseView", UniverseView);
+            exports_11("UniverseView", UniverseView);
         }
     };
 });
-System.register("WeaponView", ["utils/misc", "utils/ImageDataUint32"], function (exports_13, context_13) {
+System.register("WeaponView", ["utils/misc", "utils/ImageDataUint32"], function (exports_12, context_12) {
     var misc_3, ImageDataUint32_2, WeaponView;
-    var __moduleName = context_13 && context_13.id;
+    var __moduleName = context_12 && context_12.id;
     return {
         setters: [
             function (misc_3_1) {
@@ -706,13 +700,13 @@ System.register("WeaponView", ["utils/misc", "utils/ImageDataUint32"], function 
                     this.ctx.putImageData(this.imageData, 0, 0);
                 }
             };
-            exports_13("WeaponView", WeaponView);
+            exports_12("WeaponView", WeaponView);
         }
     };
 });
-System.register("WeaponaryView", ["WeaponView"], function (exports_14, context_14) {
+System.register("WeaponaryView", ["WeaponView"], function (exports_13, context_13) {
     var WeaponView_1, WeaponaryView;
-    var __moduleName = context_14 && context_14.id;
+    var __moduleName = context_13 && context_13.id;
     return {
         setters: [
             function (WeaponView_1_1) {
@@ -731,13 +725,13 @@ System.register("WeaponaryView", ["WeaponView"], function (exports_14, context_1
                     });
                 }
             };
-            exports_14("WeaponaryView", WeaponaryView);
+            exports_13("WeaponaryView", WeaponaryView);
         }
     };
 });
-System.register("FpsMeter", [], function (exports_15, context_15) {
+System.register("FpsMeter", [], function (exports_14, context_14) {
     var FpsMeter;
-    var __moduleName = context_15 && context_15.id;
+    var __moduleName = context_14 && context_14.id;
     return {
         setters: [],
         execute: function () {
@@ -763,13 +757,13 @@ System.register("FpsMeter", [], function (exports_15, context_15) {
                     this.lastUpdate = time;
                 }
             };
-            exports_15("FpsMeter", FpsMeter);
+            exports_14("FpsMeter", FpsMeter);
         }
     };
 });
-System.register("Application", ["Universe", "UniverseView", "WeaponaryView", "game-inputs", "FpsMeter", "utils/misc"], function (exports_16, context_16) {
+System.register("Application", ["Universe", "UniverseView", "WeaponaryView", "game-inputs", "FpsMeter", "utils/misc"], function (exports_15, context_15) {
     var Universe_1, UniverseView_1, WeaponaryView_1, game_inputs_1, FpsMeter_1, misc_4, Application;
-    var __moduleName = context_16 && context_16.id;
+    var __moduleName = context_15 && context_15.id;
     return {
         setters: [
             function (Universe_1_1) {
@@ -844,8 +838,7 @@ System.register("Application", ["Universe", "UniverseView", "WeaponaryView", "ga
                 render(time) {
                     this.fpsMeter.update(time);
                     function renderFpsText(fps) {
-                        var _a;
-                        return (_a = fps === null || fps === void 0 ? void 0 : fps.toFixed(2)) !== null && _a !== void 0 ? _a : "n/a";
+                        return fps?.toFixed(2) ?? "n/a";
                     }
                     this.fpsDisplay.textContent =
                         `fps: ${renderFpsText(this.fpsMeter.fpsHistorical)} (${renderFpsText(this.fpsMeter.fps)})`;
@@ -922,13 +915,13 @@ System.register("Application", ["Universe", "UniverseView", "WeaponaryView", "ga
                     requestAnimationFrame(requestAnimationFrameCallback);
                 }
             };
-            exports_16("Application", Application);
+            exports_15("Application", Application);
         }
     };
 });
-System.register("main", ["Application"], function (exports_17, context_17) {
+System.register("main", ["Application"], function (exports_16, context_16) {
     var Application_1, app;
-    var __moduleName = context_17 && context_17.id;
+    var __moduleName = context_16 && context_16.id;
     return {
         setters: [
             function (Application_1_1) {

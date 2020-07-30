@@ -1,6 +1,18 @@
 import { Rule } from "./Rule";
 
+export type WeaponData = ReturnType<Weapon["serialize"]>;
 export class Weapon {
+    serialize() {
+        return {
+            space: this.space,
+            prevSpace: this.prevSpace,
+        };
+    }
+
+    static deserialize(data: WeaponData) {
+        return (rule: Rule) => new Weapon(rule, data.space, data.prevSpace);
+    }
+
     get size() { return this.space.length; }
 
     readonly spacetime: Uint8Array[];
@@ -13,6 +25,7 @@ export class Weapon {
     constructor(
         public rule: Rule,
         public readonly space: number[],
+        public readonly prevSpace: number[],
     ) {
         const spaceSize = this.size * 10 + 1;
         const timeSize = spaceSize;
@@ -20,10 +33,11 @@ export class Weapon {
 
         const xMargin = (this.spacetime[0].length - this.space.length) / 2;
         for (let x = 0; x < this.space.length; x++) {
-            this.spacetime[0][x + xMargin] = this.space[x];
+            this.spacetime[0][x + xMargin] = this.prevSpace[x];
+            this.spacetime[1][x + xMargin] = this.space[x];
         }
-        const nr = rule.space.spaceNeighbourhoodRadius;
-        for (let t = 1; t < this.spacetime.length; t++) {
+        const nr = rule.spaceNeighbourhoodRadius;
+        for (let t = 2; t < this.spacetime.length; t++) {
             const space = this.spacetime[t];
             for (let x = nr; x < space.length - nr; x++) {
                 space[x] = rule.getState1(this.spacetime, t, x);

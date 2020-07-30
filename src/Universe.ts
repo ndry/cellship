@@ -3,19 +3,17 @@ import { tap } from "./utils/misc";
 import { Spacetime } from "./Spacetime";
 import { PlayerShip } from "./PlayerShip";
 import { Projectile } from "./Projectile";
-import { RuleSpace } from "./RuleSpace";
-
+import { Rule } from "./Rule";
 const urlSearchParams = new URLSearchParams(window.location.search);
 const code = urlSearchParams.has("code") 
-    ? Number.parseInt(urlSearchParams.get("code")!)
-    : 1815; //todo
+    ? BigInt(urlSearchParams.get("code")!)
+    : 0n; //todo
 
 export class Universe {
     random = new LehmerPrng(4242);
-    ruleSpace = new RuleSpace();
-    rule = this.ruleSpace.generateRule(code);
+    rule = new Rule(3, code);
     getRandomState() {
-        return this.random.next() % this.rule.space.stateCount;
+        return this.random.next() % this.rule.stateCount;
     }
 
     spacetime = new Spacetime();
@@ -27,7 +25,7 @@ export class Universe {
     projectiles: Projectile[] = [];
 
     fillMostRecentSpace() {
-        const nr = this.rule.space.spaceNeighbourhoodRadius;
+        const nr = this.rule.spaceNeighbourhoodRadius;
         const t = this.spacetime.timeSize - 1 + this.spacetime.timeOffset;
         const tSpace = this.spacetime.getSpaceAtTime(t);
 
