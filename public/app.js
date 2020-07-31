@@ -670,9 +670,14 @@ System.register("WeaponView", ["utils/misc", "utils/ImageDataUint32"], function 
         ],
         execute: function () {
             WeaponView = class WeaponView {
-                constructor(weapon) {
+                constructor(weapon, key) {
                     this.weapon = weapon;
-                    this.canvas = misc_3.tap(document.createElement("canvas"), c => {
+                    this.key = key;
+                    this.html = misc_3.tap(document.createElement("div"), div => {
+                        div.innerHTML =
+                            /*html*/ `<canvas class="wepaon"></canvas><span style="color: white;">${this.key}</span>`;
+                    });
+                    this.canvas = misc_3.tap(this.html.getElementsByTagName("canvas")[0], c => {
                         c.width = this.weapon.timeSize;
                         c.height = this.weapon.spaceSize;
                     });
@@ -718,9 +723,10 @@ System.register("WeaponaryView", ["WeaponView"], function (exports_13, context_1
                 constructor(weaponary) {
                     this.weaponary = weaponary;
                     this.el = document.getElementById("deck");
-                    this.weaponViews = this.weaponary.weapons.map(weapon => {
-                        const weaponView = new WeaponView_1.WeaponView(weapon);
-                        this.el.appendChild(weaponView.canvas);
+                    this.keys = ["A", "S", "D", "F", "Z", "X", "C", "V"];
+                    this.weaponViews = this.weaponary.weapons.map((weapon, i) => {
+                        const weaponView = new WeaponView_1.WeaponView(weapon, this.keys[i]);
+                        this.el.appendChild(weaponView.html);
                         return weaponView;
                     });
                 }

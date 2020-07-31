@@ -3,8 +3,24 @@ import {ImageDataUint32} from "./utils/ImageDataUint32";
 import {Weapon} from "./Weapon";
 
 export class WeaponView {
+
+    constructor(
+        public weapon: Weapon,
+        public key: string,
+    ) {
+        this.render();
+    }
+
+    html = tap(
+        document.createElement("div"),
+        div => {
+            div.innerHTML = 
+                /*html*/`<canvas class="wepaon"></canvas><span style="color: white;">${this.key}</span>`
+        }
+    )
+
     canvas = tap(
-        document.createElement("canvas"),
+        this.html.getElementsByTagName("canvas")[0],
         c => {
             c.width = this.weapon.timeSize;
             c.height = this.weapon.spaceSize;
@@ -20,12 +36,6 @@ export class WeaponView {
             this.weapon.spaceSize));
     colorMap = [0xFF000000, 0xFF808080, 0xFFFFFFFF];
     colorBookmarkedMap = [0xFF000000, 0xFF800080, 0xFFFF00FF];
-
-    constructor(
-        public weapon: Weapon,
-    ) {
-        this.render();
-    }
 
     setPixel(x: number, y: number, value: number) {
         const colorMap = this.weapon.isBookmarked
