@@ -1,9 +1,13 @@
-This playable proof of concept utilizes [rule 110 1d cellular automaton](https://en.wikipedia.org/wiki/Rule_110) to achieve elementary emergent gameplay. The game may be genred as some form of turn based hero defense. The center of the universe is occupied by an oscilator. The edges of the universe are generated randomly and occasionally give birth to spaceships which then propagate to the center. Player has to manually edit the world to prevent destructive interaction with the central pattern.
+[Demo](https://ndry.github.io/cellship/public/index.html?code=15836645395443001904798507900218913552)
 
-Demo: https://ndry.github.io/rule110-hero-defense-ppoc/public/
+This is playable proof of concept.
+It utilizes 1d cellular automata trying to achieve elementary emergent gameplay.
+It consumes automaton's table as `code` get-parameter. Best used with [ca-analyzer-web](https://ndry.github.io/ca-analyzer-web/public/) ([repo](https://github.com/ndry/ca-analyzer-web)) -- web application for quick preview of 1d cellular automata.
+
+### Build and run locally
 
 ```
 npm i
-tsc
+npm run build
 npm start
 ```
