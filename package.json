@@ -6,7 +6,7 @@
     "start": "http-server . -p 45245 -o http://127.0.0.1:45245/public/ -c-1"
   },
   "devDependencies": {
-    "http-server": "^0.11.1",
+    "http-server": "^0.11.2",
     "typescript": "next"
   },
   "dependencies": {
